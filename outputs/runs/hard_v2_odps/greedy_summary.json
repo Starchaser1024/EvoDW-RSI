@@ -1,0 +1,247 @@
+{
+  "method": "greedy",
+  "dialect": "odps",
+  "budget": 95,
+  "rollouts_used": 95,
+  "effective_val_size": 12,
+  "cache_hits": 157,
+  "best_policy_id": "greedy_g3",
+  "seed_val": {
+    "total": 12,
+    "ex": 0.5833,
+    "first_pass_gateway_rate": 0.8333,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.75,
+    "avg_refine_turns": 0.33,
+    "avg_tokens": 13611.6,
+    "avg_latency_ms": 97853.88,
+    "first_pass_correct_count": 7,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 0.25,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "seed_test": {
+    "total": 18,
+    "ex": 0.5556,
+    "first_pass_gateway_rate": 0.8333,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 3.28,
+    "avg_refine_turns": 0.67,
+    "avg_tokens": 18989.9,
+    "avg_latency_ms": 151521.03,
+    "first_pass_correct_count": 8,
+    "self_repaired_count": 2,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.1667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 0.8333,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_val": {
+    "total": 12,
+    "ex": 0.9167,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 4.0,
+    "avg_refine_turns": 0.0,
+    "avg_tokens": 22583.2,
+    "avg_latency_ms": 88769.41,
+    "first_pass_correct_count": 11,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_test": {
+    "total": 18,
+    "ex": 0.7222,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 4.0,
+    "avg_refine_turns": 0.06,
+    "avg_tokens": 25683.3,
+    "avg_latency_ms": 167718.23,
+    "first_pass_correct_count": 13,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.8333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "history": [
+    {
+      "generation": 0,
+      "policy_id": "seed_v0",
+      "parent_ids": [],
+      "operation": "seed",
+      "target_module": "seed",
+      "smoke_passed": true,
+      "active_val_ex": 0.5833333333333334,
+      "active_val_first_pass_gw": 0.8333333333333334,
+      "frontier_size": 1,
+      "rollouts_used": 12,
+      "rationale": "Initial seed policy baseline on stratified val (12 tasks)."
+    },
+    {
+      "generation": 1,
+      "policy_id": "greedy_g1",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "refiner",
+      "smoke_passed": true,
+      "active_val_ex": 0.6666666666666666,
+      "active_val_first_pass_gw": 0.75,
+      "frontier_size": 2,
+      "rollouts_used": 30,
+      "rationale": "Root causes are (1) a non-static partition predicate `ds = (SELECT MAX(ds) ...)` was rejected by ODPS partition pruning, so the query needed `MAX_PT('<table>')` or a literal partition value; and (2) a successfully returning query with non-empty rows was silently wrong because a business-date range was constrained by the partition key instead of the business-date column, dropping late-arriving/zero-amount rows. The refiner only acted on gateway errors and lacked a mandatory Post-Execution Sanity & Caliber Audit for non-empty results."
+    },
+    {
+      "generation": 2,
+      "policy_id": "greedy_g2",
+      "parent_ids": [
+        "greedy_g1"
+      ],
+      "operation": "mutate",
+      "target_module": "linker",
+      "smoke_passed": true,
+      "active_val_ex": 0.8333333333333334,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 3,
+      "rollouts_used": 48,
+      "rationale": "Primary root cause is upstream schema linking that was too permissive and under-probed. In the first trajectory, WarehouseLinker finalized without probing opaque status/type code columns and an ambiguous BIGINT amount column; its schema_notes carried unverified human-readable status literals and a guessed cent-to-yuan conversion. The generator used those guesses, and the refiner only repaired partition pruning but accepted a non-empty result with zero conditional aggregates. In the second trajectory, the linker probed but over-translated a compound business condition into an extra operational-status predicate, silently dropping rows. Downstream modules cannot recover from unverified code/unit metadata and over-specified filters."
+    },
+    {
+      "generation": 3,
+      "policy_id": "greedy_g3",
+      "parent_ids": [
+        "greedy_g2"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": true,
+      "active_val_ex": 0.9166666666666666,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 66,
+      "rationale": "Silent caliber misses originate in DialectSQLGenerator: it treated the daily partition key as a full business-date range filter, so backfilled/out-of-range row-by-row business dates could survive partition pruning. The current generator prompt is too sparse to consistently enforce ODPS date-format alignment, dual partition/business-date filters, grain pre-aggregation, SCD2 interval joins, probed code/unit semantics, and explicit window frames; the refiner repaired one symptom, but the generator should emit first-pass-correct SQL."
+    },
+    {
+      "generation": 4,
+      "policy_id": "greedy_g4",
+      "parent_ids": [
+        "greedy_g3"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": true,
+      "active_val_ex": 0.8333333333333334,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 84,
+      "rationale": "Sampled trajectories passed the gateway and matched gold rows exactly, so there is no active dialect/partition error. The main latent risk is generator-side under-specification for three recurring warehouse patterns: partition-window vs business-date filter asymmetry, SCD2 point-in-time attribution with pre-aggregated multi-row facts, and dimension-preserving zero-fill LEFT JOIN analytics with per-row net/floor semantics. Strengthening these guards in DialectSQLGenerator reduces future silent caliber defects without restricting already-valid behavior."
+    },
+    {
+      "generation": 5,
+      "policy_id": "greedy_g5",
+      "parent_ids": [
+        "greedy_g3"
+      ],
+      "operation": "mutate",
+      "target_module": "refiner",
+      "smoke_passed": false,
+      "active_val_ex": 0.8,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 95,
+      "rationale": "Stage-1 val screen not cleared (EX=80.0%): The gateway passed and the query returned non-empty rows, so GatewayRefiner skipped the mandatory Post-Execution Sanity & Caliber Audit and returned the same SQL. The SQL has silent caliber defects: a nullable test/flag predicate with `= 0` drops rows where the flag is NULL; a multi-row fact/detail table was deduplicated by `ROW_NUMBER()` instead of pre-aggregating additive amounts to the join grain, causing understated sums; and the current-latest SCD2 categorical tier was computed with `MAX(tier)` rather than selecting the deterministic latest current row, silently excluding changed-category orders. These are exactly the non-empty result-mismatch cases GatewayRefiner must catch."
+    }
+  ],
+  "llm_usage": {
+    "actor": {
+      "calls": 489,
+      "prompt_tokens": 1685095,
+      "completion_tokens": 970771,
+      "total_tokens": 2655866,
+      "avg_latency_ms": 28514.78,
+      "retries": 1
+    },
+    "reflector": {
+      "calls": 5,
+      "prompt_tokens": 33410,
+      "completion_tokens": 49663,
+      "total_tokens": 83073,
+      "avg_latency_ms": 137046.34,
+      "retries": 0
+    },
+    "grand_total_tokens": 2738939,
+    "grand_total_calls": 494
+  }
+}

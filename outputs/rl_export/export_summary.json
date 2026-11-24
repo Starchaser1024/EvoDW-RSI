@@ -1,0 +1,81 @@
+{
+  "total_exported_trajectories": 624,
+  "first_pass_correct_count": 553,
+  "first_pass_correct_ratio": 0.8862,
+  "self_repaired_after_error_count": 71,
+  "self_repaired_after_error_ratio": 0.1138,
+  "reused_prior_live_count": 72,
+  "grpo_prompt_count": 72,
+  "by_split": {
+    "train": 196,
+    "val": 428
+  },
+  "by_category": {
+    "fanout_dedup": 57,
+    "json_array_unnest": 62,
+    "partition_pruning": 51,
+    "ratio_null_handling": 69,
+    "retention_date_math": 60,
+    "scd2_temporal_join": 110,
+    "semantic_linking_trap": 106,
+    "silent_caliber_audit": 109
+  },
+  "by_policy_id": {
+    "gepa_g1": 56,
+    "gepa_g2": 42,
+    "gepa_g3": 91,
+    "gepa_g4": 68,
+    "gepa_g5": 57,
+    "gepa_g6": 27,
+    "gepa_g7": 16,
+    "gepa_g8": 4,
+    "greedy_g1": 58,
+    "greedy_g2": 39,
+    "greedy_g3": 37,
+    "greedy_g4": 39,
+    "greedy_g5": 13,
+    "seed_v0": 77
+  },
+  "trajectory_type_telemetry": {
+    "first_pass_correct": {
+      "telemetry_sample_count": 491,
+      "avg_steps": 2.93,
+      "avg_tokens": 13072.5,
+      "avg_latency_ms": 59409.5
+    },
+    "self_repaired_after_error": {
+      "telemetry_sample_count": 61,
+      "avg_steps": 3.54,
+      "avg_tokens": 15051.0,
+      "avg_latency_ms": 76459.4
+    }
+  },
+  "evolution_comparison": {
+    "primary_method": "gepa",
+    "best_policy_id": "gepa_g5",
+    "val": {
+      "seed_avg_steps": 3.0,
+      "evolved_avg_steps": 4.0,
+      "seed_avg_tokens": 11453.916666666666,
+      "evolved_avg_tokens": 22524.833333333332,
+      "seed_avg_latency_ms": 51864.82695500331,
+      "evolved_avg_latency_ms": 49691.229838418476
+    },
+    "test": {
+      "seed_avg_steps": 3.1666666666666665,
+      "evolved_avg_steps": 4.0,
+      "seed_avg_tokens": 15705.777777777777,
+      "evolved_avg_tokens": 25754.055555555555,
+      "seed_avg_latency_ms": 83076.07720472243,
+      "evolved_avg_latency_ms": 179985.26321777824,
+      "seed_first_pass_correct": 8,
+      "evolved_first_pass_correct": 13,
+      "seed_self_repaired": 0,
+      "evolved_self_repaired": 2
+    }
+  },
+  "openai_jsonl": "outputs/rl_export/sft_openai_tool_use.jsonl",
+  "sharegpt_jsonl": "outputs/rl_export/sft_sharegpt.jsonl",
+  "grpo_jsonl": "outputs/rl_export/grpo_prompts.jsonl",
+  "summary_json": "outputs/rl_export/export_summary.json"
+}

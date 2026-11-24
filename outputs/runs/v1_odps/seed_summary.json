@@ -1,0 +1,220 @@
+{
+  "method": "seed",
+  "dialect": "odps",
+  "budget": 65,
+  "rollouts_used": 0,
+  "effective_val_size": 20,
+  "cache_hits": 50,
+  "best_policy_id": "seed_v0",
+  "seed_val": {
+    "total": 20,
+    "ex": 0.85,
+    "first_pass_gateway_rate": 0.45,
+    "invalid_sql_rate": 0.05,
+    "avg_steps": 2.8,
+    "avg_refine_turns": 0.65,
+    "avg_tokens": 6005.2,
+    "avg_latency_ms": 50629.87,
+    "first_pass_correct_count": 7,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.0,
+        "invalid_sql_rate": 0.25
+      },
+      "ratio_null_handling": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "seed_test": {
+    "total": 30,
+    "ex": 0.9333,
+    "first_pass_gateway_rate": 0.6667,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.6,
+    "avg_refine_turns": 0.47,
+    "avg_tokens": 7097.9,
+    "avg_latency_ms": 80471.54,
+    "first_pass_correct_count": 18,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_val": {
+    "total": 20,
+    "ex": 0.85,
+    "first_pass_gateway_rate": 0.45,
+    "invalid_sql_rate": 0.05,
+    "avg_steps": 2.8,
+    "avg_refine_turns": 0.65,
+    "avg_tokens": 6005.2,
+    "avg_latency_ms": 50629.87,
+    "first_pass_correct_count": 7,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.0,
+        "invalid_sql_rate": 0.25
+      },
+      "ratio_null_handling": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_test": {
+    "total": 30,
+    "ex": 0.9333,
+    "first_pass_gateway_rate": 0.6667,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.6,
+    "avg_refine_turns": 0.47,
+    "avg_tokens": 7097.9,
+    "avg_latency_ms": 80471.54,
+    "first_pass_correct_count": 18,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "history": [
+    {
+      "generation": 0,
+      "policy_id": "seed_v0",
+      "parent_ids": [],
+      "operation": "seed",
+      "target_module": "seed",
+      "smoke_passed": true,
+      "active_val_ex": 0.85,
+      "active_val_first_pass_gw": 0.45,
+      "frontier_size": 1,
+      "rollouts_used": 0,
+      "rationale": "Initial generic seed policy evaluated on full validation set."
+    }
+  ],
+  "llm_usage": {
+    "actor": {
+      "calls": 134,
+      "prompt_tokens": 153872,
+      "completion_tokens": 179168,
+      "total_tokens": 333040,
+      "avg_latency_ms": 25559.57,
+      "retries": 0
+    },
+    "reflector": {
+      "calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "avg_latency_ms": 0.0,
+      "retries": 0
+    },
+    "grand_total_tokens": 333040,
+    "grand_total_calls": 134
+  }
+}

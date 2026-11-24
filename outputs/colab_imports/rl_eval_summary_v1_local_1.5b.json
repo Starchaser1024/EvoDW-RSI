@@ -1,0 +1,228 @@
+{
+  "generated_at": "2026-11-16T22:21:58",
+  "base_model": "/data/llm-models/Qwen2.5-Coder-1.5B-Instruct",
+  "test_task_count": 30,
+  "models": {
+    "Base 小模型 (Qwen2.5-Coder-1.5B-Instruct Zero-shot)": {
+      "total": 30,
+      "ex": 0.0333,
+      "first_pass_gateway_rate": 0.1333,
+      "invalid_sql_rate": 0.7667,
+      "avg_steps": 3.8,
+      "avg_refine_turns": 1.7,
+      "avg_tokens": 5004.1,
+      "avg_latency_ms": 9289.66,
+      "first_pass_correct_count": 0,
+      "self_repaired_count": 1,
+      "by_category": {
+        "fanout_dedup": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.1667,
+          "invalid_sql_rate": 0.5
+        },
+        "json_array_unnest": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.0,
+          "invalid_sql_rate": 0.8333
+        },
+        "partition_pruning": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.1667,
+          "invalid_sql_rate": 0.8333
+        },
+        "ratio_null_handling": {
+          "count": 6,
+          "ex": 0.1667,
+          "first_pass_gateway_rate": 0.3333,
+          "invalid_sql_rate": 0.6667
+        },
+        "retention_date_math": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.0,
+          "invalid_sql_rate": 1.0
+        }
+      }
+    },
+    "Base + GEPA Evolved Prompt (Qwen2.5-Coder-1.5B-Instruct)": {
+      "total": 30,
+      "ex": 0.0333,
+      "first_pass_gateway_rate": 0.1333,
+      "invalid_sql_rate": 0.8,
+      "avg_steps": 3.97,
+      "avg_refine_turns": 1.87,
+      "avg_tokens": 5851.3,
+      "avg_latency_ms": 9670.51,
+      "first_pass_correct_count": 0,
+      "self_repaired_count": 1,
+      "by_category": {
+        "fanout_dedup": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.1667,
+          "invalid_sql_rate": 0.8333
+        },
+        "json_array_unnest": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.0,
+          "invalid_sql_rate": 1.0
+        },
+        "partition_pruning": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.1667,
+          "invalid_sql_rate": 0.6667
+        },
+        "ratio_null_handling": {
+          "count": 6,
+          "ex": 0.1667,
+          "first_pass_gateway_rate": 0.3333,
+          "invalid_sql_rate": 0.5
+        },
+        "retention_date_math": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.0,
+          "invalid_sql_rate": 1.0
+        }
+      }
+    },
+    "SFT 冷启动模型 (Loss-Masked Multi-Turn)": {
+      "total": 30,
+      "ex": 0.2,
+      "first_pass_gateway_rate": 0.6,
+      "invalid_sql_rate": 0.6667,
+      "avg_steps": 3.33,
+      "avg_refine_turns": 1.33,
+      "avg_tokens": 11338.6,
+      "avg_latency_ms": 12084.67,
+      "first_pass_correct_count": 6,
+      "self_repaired_count": 0,
+      "by_category": {
+        "fanout_dedup": {
+          "count": 6,
+          "ex": 0.3333,
+          "first_pass_gateway_rate": 0.5,
+          "invalid_sql_rate": 0.6667
+        },
+        "json_array_unnest": {
+          "count": 6,
+          "ex": 0.3333,
+          "first_pass_gateway_rate": 1.0,
+          "invalid_sql_rate": 0.5
+        },
+        "partition_pruning": {
+          "count": 6,
+          "ex": 0.1667,
+          "first_pass_gateway_rate": 0.8333,
+          "invalid_sql_rate": 0.3333
+        },
+        "ratio_null_handling": {
+          "count": 6,
+          "ex": 0.1667,
+          "first_pass_gateway_rate": 0.5,
+          "invalid_sql_rate": 0.8333
+        },
+        "retention_date_math": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.1667,
+          "invalid_sql_rate": 1.0
+        }
+      }
+    },
+    "SFT + GRPO 模型 (4-Stage Dense Reward)": {
+      "total": 30,
+      "ex": 0.2,
+      "first_pass_gateway_rate": 0.5667,
+      "invalid_sql_rate": 0.7,
+      "avg_steps": 3.47,
+      "avg_refine_turns": 1.47,
+      "avg_tokens": 12098.3,
+      "avg_latency_ms": 19677.53,
+      "first_pass_correct_count": 6,
+      "self_repaired_count": 0,
+      "by_category": {
+        "fanout_dedup": {
+          "count": 6,
+          "ex": 0.3333,
+          "first_pass_gateway_rate": 0.5,
+          "invalid_sql_rate": 0.6667
+        },
+        "json_array_unnest": {
+          "count": 6,
+          "ex": 0.5,
+          "first_pass_gateway_rate": 0.8333,
+          "invalid_sql_rate": 0.3333
+        },
+        "partition_pruning": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.6667,
+          "invalid_sql_rate": 0.6667
+        },
+        "ratio_null_handling": {
+          "count": 6,
+          "ex": 0.1667,
+          "first_pass_gateway_rate": 0.5,
+          "invalid_sql_rate": 0.8333
+        },
+        "retention_date_math": {
+          "count": 6,
+          "ex": 0.0,
+          "first_pass_gateway_rate": 0.3333,
+          "invalid_sql_rate": 1.0
+        }
+      }
+    },
+    "在线大模型 deepseek-v4.1-flash (GEPA)": {
+      "total": 30,
+      "ex": 0.9,
+      "first_pass_gateway_rate": 0.9,
+      "invalid_sql_rate": 0.0,
+      "avg_steps": 2.17,
+      "avg_refine_turns": 0.13,
+      "avg_tokens": 7833.9,
+      "avg_latency_ms": 106377.02,
+      "first_pass_correct_count": 24,
+      "self_repaired_count": 3,
+      "by_category": {
+        "fanout_dedup": {
+          "count": 6,
+          "ex": 1.0,
+          "first_pass_gateway_rate": 1.0,
+          "invalid_sql_rate": 0.0
+        },
+        "json_array_unnest": {
+          "count": 6,
+          "ex": 0.8333,
+          "first_pass_gateway_rate": 1.0,
+          "invalid_sql_rate": 0.0
+        },
+        "partition_pruning": {
+          "count": 6,
+          "ex": 0.8333,
+          "first_pass_gateway_rate": 0.8333,
+          "invalid_sql_rate": 0.0
+        },
+        "ratio_null_handling": {
+          "count": 6,
+          "ex": 1.0,
+          "first_pass_gateway_rate": 1.0,
+          "invalid_sql_rate": 0.0
+        },
+        "retention_date_math": {
+          "count": 6,
+          "ex": 0.8333,
+          "first_pass_gateway_rate": 0.6667,
+          "invalid_sql_rate": 0.0
+        }
+      }
+    }
+  },
+  "report_path": "outputs/rl_experiment_report.md"
+}

@@ -1,0 +1,195 @@
+{
+  "stage": "sft",
+  "model_config": {
+    "model_name_or_path": "3b",
+    "use_4bit": false,
+    "bnb_4bit_quant_type": "nf4",
+    "bnb_4bit_use_double_quant": true,
+    "compute_dtype": "bfloat16",
+    "attn_implementation": "auto",
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "gradient_checkpointing": true,
+    "trust_remote_code": true,
+    "dry_run": false,
+    "seed": 2026,
+    "resolved_model_path": "Qwen/Qwen2.5-Coder-3B-Instruct"
+  },
+  "sft_config": {
+    "sft_jsonl_path": "/content/EvoDW-RSI/outputs/rl_export/sft_openai_tool_use.jsonl",
+    "output_dir": "/content/colab_workspace/checkpoints_3b/sft",
+    "max_seq_length": 9216,
+    "num_train_epochs": 3.0,
+    "max_steps": -1,
+    "per_device_train_batch_size": 4,
+    "gradient_accumulation_steps": 2,
+    "learning_rate": 0.0002,
+    "warmup_ratio": 0.08,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "lr_scheduler_type": "cosine",
+    "logging_steps": 5,
+    "save_steps": 25,
+    "save_total_limit": 2,
+    "resume_from_checkpoint": true,
+    "live_curve_jsonl_path": "/content/colab_workspace/curves_3b/sft_live_curve.jsonl",
+    "save_merged_model": true,
+    "adaptive_reweight": true,
+    "upsample_self_repaired": 2,
+    "upsample_probe": 2,
+    "target_self_repair_ratio": 0.22,
+    "target_probe_ratio": 0.18
+  },
+  "corpus_stats": {
+    "total_records": 299,
+    "effective_train_episodes": 391,
+    "first_pass_correct_count": 269,
+    "self_repaired_count": 30,
+    "probe_trajectory_count": 27,
+    "gateway_error_trajectory_count": 28,
+    "effective_self_repaired_episodes": 84,
+    "effective_probe_episodes": 71,
+    "truncated_trajectory_count": 0,
+    "max_observed_seq_len": 8666,
+    "total_tokens": 1456844,
+    "supervised_assistant_tokens": 238999,
+    "masked_context_tokens": 1217845,
+    "supervised_token_ratio": 0.1641
+  },
+  "train_runtime_sec": 1992.6,
+  "train_loss": 0.5095,
+  "global_steps": 147,
+  "resumed_from_checkpoint": null,
+  "loss_history": [
+    {
+      "step": 5,
+      "loss": 1.1093
+    },
+    {
+      "step": 10,
+      "loss": 0.9911
+    },
+    {
+      "step": 15,
+      "loss": 0.8541
+    },
+    {
+      "step": 20,
+      "loss": 0.8408
+    },
+    {
+      "step": 25,
+      "loss": 0.7992
+    },
+    {
+      "step": 30,
+      "loss": 0.7145
+    },
+    {
+      "step": 35,
+      "loss": 0.6597
+    },
+    {
+      "step": 40,
+      "loss": 0.6074
+    },
+    {
+      "step": 45,
+      "loss": 0.5859
+    },
+    {
+      "step": 50,
+      "loss": 0.5596
+    },
+    {
+      "step": 55,
+      "loss": 0.4975
+    },
+    {
+      "step": 60,
+      "loss": 0.5004
+    },
+    {
+      "step": 65,
+      "loss": 0.4501
+    },
+    {
+      "step": 70,
+      "loss": 0.498
+    },
+    {
+      "step": 75,
+      "loss": 0.4262
+    },
+    {
+      "step": 80,
+      "loss": 0.4205
+    },
+    {
+      "step": 85,
+      "loss": 0.4307
+    },
+    {
+      "step": 90,
+      "loss": 0.4289
+    },
+    {
+      "step": 95,
+      "loss": 0.4038
+    },
+    {
+      "step": 100,
+      "loss": 0.3394
+    },
+    {
+      "step": 105,
+      "loss": 0.3256
+    },
+    {
+      "step": 110,
+      "loss": 0.3267
+    },
+    {
+      "step": 115,
+      "loss": 0.279
+    },
+    {
+      "step": 120,
+      "loss": 0.2884
+    },
+    {
+      "step": 125,
+      "loss": 0.3406
+    },
+    {
+      "step": 130,
+      "loss": 0.2926
+    },
+    {
+      "step": 135,
+      "loss": 0.3126
+    },
+    {
+      "step": 140,
+      "loss": 0.297
+    },
+    {
+      "step": 145,
+      "loss": 0.2985
+    }
+  ],
+  "live_curve_jsonl": "/content/colab_workspace/curves_3b/sft_live_curve.jsonl",
+  "adapter_dir": "/content/colab_workspace/checkpoints_3b/sft/sft_adapter",
+  "merged_dir": "/content/colab_workspace/checkpoints_3b/sft/sft_merged",
+  "dry_run_base_dir": null
+}

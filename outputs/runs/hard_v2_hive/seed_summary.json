@@ -1,0 +1,172 @@
+{
+  "method": "seed",
+  "dialect": "hive",
+  "budget": 80,
+  "rollouts_used": 0,
+  "effective_val_size": 12,
+  "cache_hits": 0,
+  "best_policy_id": "seed_v0",
+  "seed_val": {
+    "total": 12,
+    "ex": 0.6667,
+    "first_pass_gateway_rate": 0.75,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.0,
+    "avg_refine_turns": 0.75,
+    "avg_tokens": 11453.9,
+    "avg_latency_ms": 51864.83,
+    "first_pass_correct_count": 6,
+    "self_repaired_count": 2,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.5
+      }
+    }
+  },
+  "seed_test": {
+    "total": 18,
+    "ex": 0.4444,
+    "first_pass_gateway_rate": 0.7778,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.17,
+    "avg_refine_turns": 0.78,
+    "avg_tokens": 15705.8,
+    "avg_latency_ms": 83076.08,
+    "first_pass_correct_count": 8,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.5
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_val": {
+    "total": 12,
+    "ex": 0.6667,
+    "first_pass_gateway_rate": 0.75,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.0,
+    "avg_refine_turns": 0.75,
+    "avg_tokens": 11453.9,
+    "avg_latency_ms": 51864.83,
+    "first_pass_correct_count": 6,
+    "self_repaired_count": 2,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.5
+      }
+    }
+  },
+  "best_test": {
+    "total": 18,
+    "ex": 0.4444,
+    "first_pass_gateway_rate": 0.7778,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.17,
+    "avg_refine_turns": 0.78,
+    "avg_tokens": 15705.8,
+    "avg_latency_ms": 83076.08,
+    "first_pass_correct_count": 8,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.5
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "history": [
+    {
+      "generation": 0,
+      "policy_id": "seed_v0",
+      "parent_ids": [],
+      "operation": "seed",
+      "target_module": "seed",
+      "smoke_passed": true,
+      "active_val_ex": 0.6666666666666666,
+      "active_val_first_pass_gw": 0.75,
+      "frontier_size": 1,
+      "rollouts_used": 0,
+      "rationale": "Initial generic seed policy evaluated on full validation set."
+    }
+  ],
+  "llm_usage": {
+    "actor": {
+      "calls": 93,
+      "prompt_tokens": 175642,
+      "completion_tokens": 244509,
+      "total_tokens": 420151,
+      "avg_latency_ms": 22768.53,
+      "retries": 3
+    },
+    "reflector": {
+      "calls": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "avg_latency_ms": 0.0,
+      "retries": 0
+    },
+    "grand_total_tokens": 420151,
+    "grand_total_calls": 93
+  }
+}

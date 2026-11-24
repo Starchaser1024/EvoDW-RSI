@@ -1,0 +1,280 @@
+{
+  "method": "greedy",
+  "dialect": "odps",
+  "budget": 65,
+  "rollouts_used": 59,
+  "effective_val_size": 10,
+  "cache_hits": 169,
+  "best_policy_id": "greedy_g4",
+  "seed_val": {
+    "total": 20,
+    "ex": 0.85,
+    "first_pass_gateway_rate": 0.45,
+    "invalid_sql_rate": 0.05,
+    "avg_steps": 2.8,
+    "avg_refine_turns": 0.65,
+    "avg_tokens": 6005.2,
+    "avg_latency_ms": 50629.87,
+    "first_pass_correct_count": 7,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 0.0,
+        "invalid_sql_rate": 0.25
+      },
+      "ratio_null_handling": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "seed_test": {
+    "total": 30,
+    "ex": 0.9333,
+    "first_pass_gateway_rate": 0.6667,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.6,
+    "avg_refine_turns": 0.47,
+    "avg_tokens": 7097.9,
+    "avg_latency_ms": 80471.54,
+    "first_pass_correct_count": 18,
+    "self_repaired_count": 10,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.6667,
+        "invalid_sql_rate": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.8333,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_val": {
+    "total": 20,
+    "ex": 0.95,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.1,
+    "avg_refine_turns": 0.0,
+    "avg_tokens": 5375.1,
+    "avg_latency_ms": 30031.88,
+    "first_pass_correct_count": 19,
+    "self_repaired_count": 0,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 4,
+        "ex": 0.75,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_test": {
+    "total": 30,
+    "ex": 0.9667,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 2.17,
+    "avg_refine_turns": 0.0,
+    "avg_tokens": 4995.8,
+    "avg_latency_ms": 31185.31,
+    "first_pass_correct_count": 29,
+    "self_repaired_count": 0,
+    "by_category": {
+      "fanout_dedup": {
+        "count": 6,
+        "ex": 0.8333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "json_array_unnest": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "partition_pruning": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "retention_date_math": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "history": [
+    {
+      "generation": 0,
+      "policy_id": "seed_v0",
+      "parent_ids": [],
+      "operation": "seed",
+      "target_module": "seed",
+      "smoke_passed": true,
+      "active_val_ex": 0.9,
+      "active_val_first_pass_gw": 0.6,
+      "frontier_size": 1,
+      "rollouts_used": 10,
+      "rationale": "Initial seed policy baseline on stratified val (10 tasks)."
+    },
+    {
+      "generation": 1,
+      "policy_id": "greedy_g1",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": true,
+      "active_val_ex": 0.8,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 26,
+      "rationale": "The generator emitted latest-partition predicates using self-referencing MAX(ds) subqueries or joined max_ds subqueries. In ODPS, such derived predicates are not recognized as partition filters and trigger full-table-scan rejection. The refiner fixes are correct, but the generator must encode direct MAX_PT partition pruning to prevent the initial gateway AST error."
+    },
+    {
+      "generation": 2,
+      "policy_id": "greedy_g2",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": false,
+      "active_val_ex": 0.8,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 37,
+      "rationale": "Stage-1 val screen not cleared (EX=80.0%): The initial SQL generator emitted ODPS-unsupported date functions (DATE_FORMAT, DATE_ADD) and used a JOIN against a MAX(partition) subquery instead of a static partition predicate, causing gateway AST and full-table-scan partition exceptions. The generator must be reinforced with strict ODPS dialect and partition-pruning rules."
+    },
+    {
+      "generation": 3,
+      "policy_id": "greedy_g3",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": false,
+      "active_val_ex": null,
+      "active_val_first_pass_gw": null,
+      "frontier_size": 2,
+      "rollouts_used": 43,
+      "rationale": "Minibatch smoke gate not cleared (2.21 vs 3.16): The generator emitted a non-prunable latest-partition predicate using a scalar subquery (`ds = (SELECT MAX(ds) ...)`), which the ODPS gateway rejects as a full-table scan because partition pruning cannot be proven. The refiner later repaired it with `MAX_PT`, but the root cause was the initial generator SQL."
+    },
+    {
+      "generation": 4,
+      "policy_id": "greedy_g4",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": true,
+      "active_val_ex": 0.9,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 59,
+      "rationale": "The generator emitted non-constant partition filters such as `dt = (SELECT MAX(dt) FROM table)` and `ds = (SELECT MAX(ds) FROM table)`. ODPS does not recognize scalar subqueries over partition columns as partition pruning predicates and rejects them as full table scans with ODPS-0123031. The generator must use the metadata function `MAX_PT('table_name')` for latest-partition queries."
+    }
+  ],
+  "llm_usage": {
+    "actor": {
+      "calls": 332,
+      "prompt_tokens": 410518,
+      "completion_tokens": 393694,
+      "total_tokens": 804212,
+      "avg_latency_ms": 18745.18,
+      "retries": 0
+    },
+    "reflector": {
+      "calls": 4,
+      "prompt_tokens": 13878,
+      "completion_tokens": 16288,
+      "total_tokens": 30166,
+      "avg_latency_ms": 54382.23,
+      "retries": 0
+    },
+    "grand_total_tokens": 834378,
+    "grand_total_calls": 336
+  }
+}

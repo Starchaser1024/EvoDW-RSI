@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-smoke:
+    name: Test & Sandbox Smoke (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12"]
+
+    env:
+      PYTHONUTF8: "1"
+      USE_TF: "0"
+      TRANSFORMERS_NO_TF: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install core, CPU PyTorch, and RL post-training dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install \
+            "transformers>=4.51.0,<5.0.0" \
+            "peft>=0.14.0" \
+            "trl>=0.16.0,<1.0.0" \
+            "datasets>=3.0.0,<5.0.0" \
+            "accelerate>=1.2.0" \
+            "huggingface-hub>=0.34.0,<1.0.0"
+          python -m pip install -e . --no-deps
+
+      - name: Verify unified CLI & environment diagnostics
+        run: |
+          python -m src --help
+          python -m src doctor
+
+      - name: Run offline unit & integration test suite
+        run: python -m pytest -q
+
+      - name: Run 3-task warehouse trajectory smoke test
+        run: python scripts/smoke_test.py

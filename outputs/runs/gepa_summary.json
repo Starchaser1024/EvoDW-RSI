@@ -1,0 +1,248 @@
+{
+  "method": "gepa",
+  "dialect": "hive",
+  "budget": 105,
+  "rollouts_used": 96,
+  "effective_val_size": 12,
+  "cache_hits": 163,
+  "best_policy_id": "gepa_g5",
+  "seed_val": {
+    "total": 12,
+    "ex": 0.6667,
+    "first_pass_gateway_rate": 0.75,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.0,
+    "avg_refine_turns": 0.75,
+    "avg_tokens": 11453.9,
+    "avg_latency_ms": 51864.83,
+    "first_pass_correct_count": 6,
+    "self_repaired_count": 2,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.75,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 0.5,
+        "first_pass_gateway_rate": 0.5,
+        "invalid_sql_rate": 0.5
+      }
+    }
+  },
+  "seed_test": {
+    "total": 18,
+    "ex": 0.4444,
+    "first_pass_gateway_rate": 0.7778,
+    "invalid_sql_rate": 0.1667,
+    "avg_steps": 3.17,
+    "avg_refine_turns": 0.78,
+    "avg_tokens": 15705.8,
+    "avg_latency_ms": 83076.08,
+    "first_pass_correct_count": 8,
+    "self_repaired_count": 0,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 0.3333,
+        "first_pass_gateway_rate": 0.3333,
+        "invalid_sql_rate": 0.5
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_val": {
+    "total": 12,
+    "ex": 1.0,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 4.0,
+    "avg_refine_turns": 0.33,
+    "avg_tokens": 22524.8,
+    "avg_latency_ms": 49691.23,
+    "first_pass_correct_count": 8,
+    "self_repaired_count": 4,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 4,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "best_test": {
+    "total": 18,
+    "ex": 0.8333,
+    "first_pass_gateway_rate": 1.0,
+    "invalid_sql_rate": 0.0,
+    "avg_steps": 4.0,
+    "avg_refine_turns": 0.17,
+    "avg_tokens": 25754.1,
+    "avg_latency_ms": 179985.26,
+    "first_pass_correct_count": 13,
+    "self_repaired_count": 2,
+    "by_category": {
+      "scd2_temporal_join": {
+        "count": 6,
+        "ex": 0.6667,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "semantic_linking_trap": {
+        "count": 6,
+        "ex": 1.0,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      },
+      "silent_caliber_audit": {
+        "count": 6,
+        "ex": 0.8333,
+        "first_pass_gateway_rate": 1.0,
+        "invalid_sql_rate": 0.0
+      }
+    }
+  },
+  "history": [
+    {
+      "generation": 0,
+      "policy_id": "seed_v0",
+      "parent_ids": [],
+      "operation": "seed",
+      "target_module": "seed",
+      "smoke_passed": true,
+      "active_val_ex": 0.6666666666666666,
+      "active_val_first_pass_gw": 0.75,
+      "frontier_size": 1,
+      "rollouts_used": 12,
+      "rationale": "Initial seed policy baseline on stratified val (12 tasks)."
+    },
+    {
+      "generation": 1,
+      "policy_id": "gepa_g1",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "linker",
+      "smoke_passed": true,
+      "active_val_ex": 0.9166666666666666,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 30,
+      "rationale": "WarehouseLinker failed to (1) proactively probe partition metadata and opaque code columns for HIVE latest-partition questions, so generators emitted dynamic MAX(ds)/MAX_PT/subquery partition filters that Hive rejects or that trigger full-scan violations; (2) record exact probed max_partition literals and actual code mappings unambiguously in schema_notes; (3) synthesize non-requested lifecycle/status predicates such as settled-status filters, causing silent undercounting; and (4) guess code values without probing, producing wrong status filters."
+    },
+    {
+      "generation": 2,
+      "policy_id": "gepa_g2",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "generator",
+      "smoke_passed": true,
+      "active_val_ex": 0.6666666666666666,
+      "active_val_first_pass_gw": 0.8333333333333334,
+      "frontier_size": 2,
+      "rollouts_used": 48,
+      "rationale": "The generator repeatedly produced empty or undercounted results because it compared SCD2 date columns with inconsistent formats directly (e.g. raw YYYYMMDD event date against raw YYYY-MM-DD effective bounds and NULL/empty open-ended eff_end_dt), and because it invented hardcoded positive enum inclusion lists for business qualifiers like 'external/commercial' instead of using schema_notes/probed code mappings, silently dropping all rows or undercounting point-in-time joins."
+    },
+    {
+      "generation": 3,
+      "policy_id": "gepa_g3",
+      "parent_ids": [
+        "seed_v0"
+      ],
+      "operation": "mutate",
+      "target_module": "refiner",
+      "smoke_passed": true,
+      "active_val_ex": 0.75,
+      "active_val_first_pass_gw": 0.8333333333333334,
+      "frontier_size": 2,
+      "rollouts_used": 66,
+      "rationale": "Initial SQL returned empty primarily due to date/partition format mismatch, but the refiner misattributed the empty result to the business status/risk code whitelists and replaced strict equality predicates with loose negative-list filters, silently including non-normal/risk rows and producing incorrect aggregates. Linker also failed to probe opaque status/risk code columns, so code mappings were guessed rather than verified."
+    },
+    {
+      "generation": 4,
+      "policy_id": "gepa_g4",
+      "parent_ids": [
+        "gepa_g2",
+        "gepa_g3"
+      ],
+      "operation": "merge",
+      "target_module": "merge",
+      "smoke_passed": true,
+      "active_val_ex": 0.6666666666666666,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 2,
+      "rollouts_used": 78,
+      "rationale": "Merged by retaining Candidate A's evolved HIVE-compliant generator rules (authoritative schema_notes/probe usage, partition pruning, SCD2 date normalization, fanout protection, unit conversion, and CTE patterns) since Candidate B left the generator at the minimal ancestor. Retained Candidate B's evolved refiner diagnosis/caliber-audit guardrails since Candidate A left the refiner at the minimal ancestor, with its MAX_PT phrasing corrected to state MAX_PT does not exist and explicit schema_notes literals are authoritative. The linker was kept minimal but enriched with HIVE partition-probing guidance so max_partition literals reach schema_notes. All overlapping rules were deduplicated while preserving distinct non-conflicting checks from both parents."
+    },
+    {
+      "generation": 5,
+      "policy_id": "gepa_g5",
+      "parent_ids": [
+        "gepa_g4"
+      ],
+      "operation": "mutate",
+      "target_module": "linker",
+      "smoke_passed": true,
+      "active_val_ex": 1.0,
+      "active_val_first_pass_gw": 1.0,
+      "frontier_size": 1,
+      "rollouts_used": 96,
+      "rationale": "The linker inferred an unrequested lifecycle/status predicate from vague business wording ('formal external commercial orders') and recorded it as authoritative schema_notes. The generator applied that predicate verbatim, silently excluding valid non-settled rows and producing lower counts and amounts. The linker also asserted a count-grain equivalence without probing row/grain semantics, leaving COUNT DISTINCT vs COUNT(1) ambiguous."
+    }
+  ],
+  "llm_usage": {
+    "actor": {
+      "calls": 455,
+      "prompt_tokens": 1345906,
+      "completion_tokens": 883065,
+      "total_tokens": 2228971,
+      "avg_latency_ms": 24346.07,
+      "retries": 2
+    },
+    "reflector": {
+      "calls": 5,
+      "prompt_tokens": 26235,
+      "completion_tokens": 34147,
+      "total_tokens": 60382,
+      "avg_latency_ms": 91409.0,
+      "retries": 0
+    },
+    "grand_total_tokens": 2289353,
+    "grand_total_calls": 460
+  }
+}
