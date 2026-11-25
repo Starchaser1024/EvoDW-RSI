@@ -124,6 +124,8 @@ cp .env.example .env
 
 # 运行统一 CLI 环境与基准完整性自检
 evodw doctor
+# 校验冻结实验谱系清单（Cohort-v1 299/45 vs Cohort-v2 624/72）、零测试泄漏与统计置信区间
+evodw audit-experiments
 # 或使用模块方式调用：
 python -m src --help
 ```
@@ -157,7 +159,9 @@ evodw evolve --suite hard_v2 --dialect hive --budget 105 --val-active-size 12 --
 ### 4. 运行多轮工具交互 SFT 与 Observation-Masked Agentic GRPO
 
 ```bash
-# Stage 1: Loss-Masked 多轮轨迹 SFT 冷启动（624 条跨套件去重验证轨迹）
+# Stage 1: Loss-Masked 多轮轨迹 SFT 冷启动
+# 注：当前 outputs/rl_export/ 已导出 Cohort-v2（v1 + Hard-v2 合并共 624 条验证轨迹 / 72 道 GRPO Prompt）；
+# 下文冻结的 3B Colab 实验基于 Cohort-v1（v1 套件 299 条去重轨迹 -> 391 条重加权轮次 / 45 道 GRPO Prompt）训练。
 evodw train-sft --model 3b --epochs 3 --max-seq-length 9216 --no-4bit --output-dir outputs/rl_checkpoints/sft
 
 # Stage 2A: 4-Stage 稠密 + 自修复奖励多轮沙盒 GRPO 主模型（G=8, beta=0.04, 100 steps）
@@ -208,16 +212,20 @@ evodw eval-rl --model 3b --vertical-model xiyansql-3b \
 
 ### 3. 小模型多轮 SFT + Agentic GRPO 后训练评测（1.5B & 3B，隔离 `v1` Test = 30 题）
 
-完整评测报告与训练动态详见 [rl_experiment_report.md](outputs/rl_experiment_report.md) 与 [rl_experiment_report_1_5b_v1.md](outputs/rl_experiment_report_1_5b_v1.md)：
+完整评测报告、训练动态与谱系校验清单详见 [rl_experiment_report.md](outputs/rl_experiment_report.md)、[rl_experiment_report_1_5b_v1.md](outputs/rl_experiment_report_1_5b_v1.md) 与 [EXPERIMENT_MANIFEST.json](outputs/EXPERIMENT_MANIFEST.json)（可通过 `evodw audit-experiments` 一键复核）：
 
-| 模型规模与方案 | 训练预算 | Test EX | First-Pass GW | Invalid SQL Rate | Avg Steps | 核心结论 |
-|---|---|---:|---:|---:|---:|---|
-| `Qwen2.5-Coder-1.5B-Instruct` (Zero-shot) | - | 3.3% | 13.3% | 76.7% | 3.80 | 极小参数基座几乎无法遵循多模块 JSON 与分区契约 |
-| `Qwen2.5-Coder-1.5B` + Loss-Masked SFT + GRPO (`v1`) | 85 trajs / 8 steps | **20.0%** | **60.0%** | 66.7% | 3.33 | 初步内化分区与 `explode` 语法（较 1.5B Base **+16.7pp EX**） |
-| `Qwen2.5-Coder-3B-Instruct` (Zero-shot) | - | 10.0% | 30.0% | 56.7% | 3.73 | 频繁遗漏分区裁剪（`ODPS-0123031`）与方言函数混用 |
-| `Qwen2.5-Coder-3B` + GEPA Evolved Prompt | 0（仅替换 Prompt） | 16.7% | 60.0% | 66.7% | 3.60 | 纯 Prompt 进化使首轮网关通过率翻倍，但受限于 3B 零样本推理上限 |
-| `XiYanSQL-QwenCoder-3B-2504` (垂直 SQL SOTA 对照) | 开源垂直基座 | 16.7% | 46.7% | 76.7% | 1.00 | 通用 SQL SOTA 在私有数仓分区裁剪与 `explode`（`0.0%`）上显著水土不服 |
-| **EvoDW Stage-1 SFT (`3B`, Loss-Masked Multi-Turn)** | 299 trajs (3 epochs) | **53.3%** | **93.3%** | **26.7%** | 2.67 | **较 3B Base 提升 +43.3pp EX，首轮网关通过率跃升至 93.3%** |
-| EvoDW Stage-2A GRPO (`3B`, Outcome-Only Sparse 消融) | 100 steps (`G=8`) | 40.0% | 90.0% | 30.0% | 2.93 | 纯 0/1 稀疏奖励在长链路留存题上出现组内零方差梯度饥饿（留存类退化至 `0.0%`） |
-| **EvoDW Stage-2B GRPO (`3B`, 4-Stage Dense + Self-Repair)** | 100 steps (`G=8`) | **46.7%** | **90.0%** | **26.7%** | 2.80 | **较稀疏奖励提升 +6.7pp EX**，四大类题型首轮网关达 **100%**，并在 `ja_11`、`rd_10` 上成功逆转 SFT 失败题 |
-| 在线 Teacher (`deepseek-v4.1-flash` + GEPA) | 65 rollouts | **100.0%** | **96.7%** | **0.0%** | 2.17 | 在线多模块自进化系统上限基准 |
+| 模型规模与方案 | 训练预算（批次谱系） | Test EX (`Hits/30`) | 95% Wilson CI | First-Pass GW | Invalid SQL Rate | Avg Steps | 核心结论 |
+|---|---|---:|---:|---:|---:|---:|---|
+| `Qwen2.5-Coder-1.5B-Instruct` (Zero-shot) | - | 3.3% (`1/30`) | [0.6%, 16.7%] | 13.3% | 76.7% | 3.80 | 极小参数基座几乎无法遵循多模块 JSON 与分区契约 |
+| `Qwen2.5-Coder-1.5B` + Loss-Masked SFT + GRPO (`v1`) | `Cohort-v0`: 85 trajs / 8 steps | **20.0%** (`6/30`) | [9.5%, 37.3%] | **60.0%** | 66.7% | 3.33 | 初步内化分区与 `explode` 语法（较 1.5B Base **+16.7pp EX**） |
+| `Qwen2.5-Coder-3B-Instruct` (Zero-shot) | - | 10.0% (`3/30`) | [3.5%, 25.6%] | 30.0% | 56.7% | 3.73 | 频繁遗漏分区裁剪（`ODPS-0123031`）与方言函数混用 |
+| `Qwen2.5-Coder-3B` + GEPA Evolved Prompt | 0（仅替换 Prompt） | 16.7% (`5/30`) | [7.3%, 33.6%] | 60.0% | 66.7% | 3.60 | 纯 Prompt 进化使首轮网关通过率翻倍，但受限于 3B 零样本推理上限 |
+| `XiYanSQL-QwenCoder-3B-2504` (垂直 SQL SOTA 对照) | 开源垂直基座 | 16.7% (`5/30`) | [7.3%, 33.6%] | 46.7% | 76.7% | 1.00 | 通用 SQL SOTA 在私有数仓分区裁剪与 `explode`（`0.0%`）上显著水土不服 |
+| **EvoDW Stage-1 SFT (`3B`, Loss-Masked Multi-Turn)** | `Cohort-v1`: 299 trajs (3 epochs) | **53.3%** (`16/30`) | [36.1%, 69.8%] | **93.3%** | **26.7%** | 2.67 | **较 3B Base 提升 +43.3pp EX（McNemar $p \le 0.001$），首轮网关达 93.3%** |
+| EvoDW Stage-2A GRPO (`3B`, Outcome-Only Sparse 消融) | `Cohort-v1`: 45 prompts / 100 steps | 40.0% (`12/30`) | [24.6%, 57.7%] | 90.0% | 30.0% | 2.93 | 32.0% 训练步出现组内零方差梯度饥饿，留存类退化至 `0.0%`（`0/6`） |
+| **EvoDW Stage-2B GRPO (`3B`, 4-Stage Dense + Self-Repair)** | `Cohort-v1`: 45 prompts / 100 steps | **46.7%** (`14/30`) | [30.2%, 63.9%] | **90.0%** | **26.7%** | 2.80 | **较稀疏奖励 +6.7pp EX**，零方差步降至 `6.0%`，`partition_pruning` 首轮网关达 **100%** 并逆转 `ja_11`、`rd_10` |
+| 在线 Teacher (`deepseek-v4.1-flash` + GEPA) | 65 rollouts (`v1` ODPS) | **100.0%** (`30/30`) | [88.6%, 100.0%] | **96.7%** | **0.0%** | 2.17 | 在线多模块自进化系统上限基准 |
+
+> **谱系对账与统计功效说明（Reproducibility & Statistical Caveats）**：
+> 1. **批次谱系对账（`299` vs `624`）**：上表冻结的 3B 模型训练于 **`Cohort-v1`**（`v1` ODPS 进化产出的 `299` 条去重验证轨迹 -> 自适应重加权 `391` 轮 + `45` 道 `v1` GRPO Prompt）；仓库当前 `outputs/rl_export/` 为后续合入 `Hard-v2`（ODPS `253` 条 + Hive `72` 条）后的 **`Cohort-v2`**（共 `624` 条轨迹 / `72` 道 GRPO Prompt，全部 `48` 道 `test` 题严格零交集）。
+> 2. **统计功效与 SFT vs GRPO 诊断**：在 `N=30` 测试集上，SFT（`16/30`）与 Dense GRPO（`14/30`）仅差 `2` 题（双侧精确 McNemar $p = 0.6875$，处于 95% Wilson CI 重叠区内，不可单凭点估计做强渐近排序断言）。真实训练日志显示 `Cohort-v1` 的 `45` 道 GRPO Prompt 中有 `84.4%`（`38/45`）已被 SFT 覆盖，第 `4` 步在线 EX 即达 `81.25%` 并在 Epoch $>1$ 出现轻微 KL 漂移（`0.00037 -> 0.01510`）与长度压缩权衡；而 4-Stage 稠密奖励将组内零方差步占比从稀疏奖励的 `32.0%`（`16/50`）压降至 `6.0%`（`3/50`），有效阻止了长链路留存题坍塌。下一阶段训练协议将在 `Cohort-v2`（`72+` 题）上引入 `0 < pass@8 < 1` 动态课程过滤与单 Epoch 早停。

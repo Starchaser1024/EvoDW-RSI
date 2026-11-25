@@ -2,20 +2,21 @@
 
 - 生成时间: `2026-11-17 20:10:51`
 - 主实验模型基座: `Qwen2.5-Coder-3B-Instruct`
-- 隔离评测集: `Test Split = 30 道企业数仓题`（与 SFT `299` 条验证轨迹 / GRPO `45` 道训练题严格零交集）
+- 训练批次谱系（`Cohort-v1`）: Stage-1 SFT `299` 条 `v1` ODPS 去重验证轨迹（自适应重加权至 `391` 轮）+ Stage-2 GRPO `45` 道 `v1` `train+val` 题（注：当前磁盘 `outputs/rl_export/` 为后续增量合并 `Hard-v2` 后的 `Cohort-v2` 共 `624` 条轨迹 / `72` 道 Prompt，详见 `outputs/EXPERIMENT_MANIFEST.json`）
+- 隔离评测集: `Test Split = 30 道企业数仓题`（与 SFT `299` 条验证轨迹 / GRPO `45` 道训练题严格零交集，由 `evodw audit-experiments` 自动校验）
 - 本地双层仿真沙盒: `WarehouseSandbox`（`GatewayLinter` 静态分区/方言 AST 拦截 + `LocalDuckDBExecutor` 确定性转译执行）
 
 ## 1. 五组/全链路模型核心指标对比（Isolated Test Set）
 
-| 模型方案 | EX (执行准确率) | First-Pass Gateway Rate | Invalid SQL Rate | 1st-Pass 对 / 自修复对 | Avg Steps | 单题推理延迟 (ms) |
-|---|---:|---:|---:|---:|---:|---:|
-| **Base 小模型 (Qwen2.5-Coder-3B-Instruct Zero-shot)** | **10.0%** | 30.0% | 56.7% | 2 / 1 | 3.73 | 6550.9 |
-| **Base + GEPA Evolved Prompt (Qwen2.5-Coder-3B-Instruct)** | **16.7%** | 60.0% | 66.7% | 4 / 1 | 3.60 | 9212.4 |
-| **垂直 SQL 模型 (XiYanSQL-QwenCoder-3B-2504 Zero-shot)** | **16.7%** | 46.7% | 76.7% | 5 / 0 | 1.00 | 857.2 |
-| **SFT 冷启动模型 (Loss-Masked Multi-Turn)** | **53.3%** | 93.3% | 26.7% | 16 / 0 | 2.67 | 8815.6 |
-| **Multi-Turn SFT + GRPO (Outcome-Only Sparse Reward)** | **40.0%** | 90.0% | 30.0% | 11 / 1 | 2.93 | 9553.8 |
-| **Multi-Turn SFT + GRPO (4-Stage Dense + Self-Repair)** | **46.7%** | 90.0% | 26.7% | 13 / 1 | 2.80 | 9557.1 |
-| **在线大模型 deepseek-v4.1-flash (GEPA)** | **100.0%** | 96.7% | 0.0% | 29 / 1 | 2.17 | 27836.2 |
+| 模型方案 | EX (执行准确率) | 95% Wilson CI | First-Pass Gateway Rate | Invalid SQL Rate | 1st-Pass 对 / 自修复对 | Avg Steps | 单题推理延迟 (ms) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **Base 小模型 (Qwen2.5-Coder-3B-Instruct Zero-shot)** | **10.0%** (3/30) | [3.5%, 25.6%] | 30.0% | 56.7% | 2 / 1 | 3.73 | 6550.9 |
+| **Base + GEPA Evolved Prompt (Qwen2.5-Coder-3B-Instruct)** | **16.7%** (5/30) | [7.3%, 33.6%] | 60.0% | 66.7% | 4 / 1 | 3.60 | 9212.4 |
+| **垂直 SQL 模型 (XiYanSQL-QwenCoder-3B-2504 Zero-shot)** | **16.7%** (5/30) | [7.3%, 33.6%] | 46.7% | 76.7% | 5 / 0 | 1.00 | 857.2 |
+| **SFT 冷启动模型 (Loss-Masked Multi-Turn)** | **53.3%** (16/30) | [36.1%, 69.8%] | 93.3% | 26.7% | 16 / 0 | 2.67 | 8815.6 |
+| **Multi-Turn SFT + GRPO (Outcome-Only Sparse Reward)** | **40.0%** (12/30) | [24.6%, 57.7%] | 90.0% | 30.0% | 11 / 1 | 2.93 | 9553.8 |
+| **Multi-Turn SFT + GRPO (4-Stage Dense + Self-Repair)** | **46.7%** (14/30) | [30.2%, 63.9%] | 90.0% | 26.7% | 13 / 1 | 2.80 | 9557.1 |
+| **在线大模型 deepseek-v4.1-flash (GEPA)** | **100.0%** (30/30) | [88.6%, 100.0%] | 96.7% | 0.0% | 29 / 1 | 2.17 | 27836.2 |
 
 ## 2. 五大数仓高频错题分项准确率（EX）对比
 
@@ -63,6 +64,11 @@
 - 多轮交互配置: `max_rollout_turns=3`, `G=8`, `KL beta=0.04` （Action Token `completion_mask=1`，沙盒报错 Observation Token 严格 `completion_mask=0`）
 - 激活奖励组件 (`full`): `format_reward, gateway_ast_reward, execution_validity_reward, ex_outcome_efficiency_reward`
 - 训练步数 / 峰值奖励 / 耗时: `100` steps / `1.8226` / `5108.0s`
+
+### 6.3 SFT vs GRPO 训练动态与统计功效定量诊断（可由 `evodw audit-experiments` 确定性复现）
+- **统计功效边界（`N=30`）**: Stage-1 SFT（`16/30 = 53.3%`, 95% Wilson CI `[36.1%, 69.8%]`）与 Stage-2B Dense GRPO（`14/30 = 46.7%`, 95% Wilson CI `[30.2%, 63.9%]`）仅差 `2` 题，双侧精确 McNemar $p = 0.6875$（`N=30` 下 80% 功效最小可检出差异 MDE 约为 `25.6pp`），点估计差异处于二项抽样置信区间重叠带内；而两者相较 3B Base（`3/30 = 10.0%`）的提升（`+43.3pp` / `+36.7pp`, $p \le 0.001$）统计显著。
+- **小题池饱和与后半程 KL 漂移**: `Cohort-v1` 的 `45` 道 GRPO Prompt 中有 `38/45`（`84.4%`）已在 SFT 阶段经历平均 `7.87` 条验证轨迹监督，导致在线 `multiturn/online_ex_rate` 在第 `4` 步即从 `37.5%` 跃升至 `81.25%`；在同批 `45` 题上继续迭代至 `100` 步（`2.22` 个数据集 Epoch）使 KL 散度从 `0.00037`（step 2）升至 `0.01510`（step 100），在线 EX 均值由 `49.7%`（Epoch $\le 1$）轻度回落至 `46.0%`（Epoch $> 1$）。
+- **稠密奖励对零方差饥饿的抑制与题型权衡**: Outcome-Only 稀疏奖励在 `16/50`（`32.0%`）个记录步出现组内零标准差（`frac_reward_zero_std > 0`），致使 `retention_date_math` 退化至 `0.0%`（`0/6`）；4-Stage 稠密奖励将零方差步降至 `3/50`（`6.0%`，降低 `5.33` 倍），将 `partition_pruning` 首轮网关通过率推升至 `100.0%`（非法率 `0.0%`）并成功逆转 SFT 失败题 `ja_11`、`rd_10`，但步数/长度惩罚（均值 `405.6` vs 稀疏 `440.2` tokens）在多 CTE 预聚合的 `fanout_dedup`（`4/6 -> 3/6`）上带来轻微折损。下一阶段应在扩充后的 `Cohort-v2`（`72+` 道跨套件题）上启用 `0 < pass@8 < 1` 动态课程过滤与 Epoch $\le 1.0$ 早停。
 
 ## 7. 典型测试题演进案例对比（Base -> SFT -> Multi-Turn SFT+GRPO）
 

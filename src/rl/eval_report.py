@@ -6,6 +6,8 @@ import datetime as dt
 import json
 from typing import Any
 
+from src.eval.manifest_audit import wilson_confidence_interval
+
 CATEGORIES_ORDER = (
     "partition_pruning",
     "json_array_unnest",
@@ -102,15 +104,18 @@ def render_rl_markdown_report(
     lines.append("## 1. 五组/全链路模型核心指标对比（Isolated Test Set）")
     lines.append("")
     lines.append(
-        "| 模型方案 | EX (执行准确率) | First-Pass Gateway Rate | Invalid SQL Rate | "
+        "| 模型方案 | EX (执行准确率) | 95% Wilson CI | First-Pass Gateway Rate | Invalid SQL Rate | "
         "1st-Pass 对 / 自修复对 | Avg Steps | 单题推理延迟 (ms) |"
     )
-    lines.append("|---|---:|---:|---:|---:|---:|---:|")
+    lines.append("|---|---:|---:|---:|---:|---:|---:|---:|")
     for name, m in model_results:
         fp_c = m.get("first_pass_correct_count", 0)
         sr_c = m.get("self_repaired_count", 0)
+        tot_n = int(m.get("total", test_task_count) or test_task_count)
+        hits_n = int(round(float(m["ex"]) * tot_n))
+        ci_lo, ci_hi = wilson_confidence_interval(hits_n, tot_n)
         lines.append(
-            f"| **{name}** | **{_pct(m['ex'])}** | {_pct(m['first_pass_gateway_rate'])} | "
+            f"| **{name}** | **{_pct(m['ex'])}** ({hits_n}/{tot_n}) | [{_pct(ci_lo)}, {_pct(ci_hi)}] | {_pct(m['first_pass_gateway_rate'])} | "
             f"{_pct(m['invalid_sql_rate'])} | {fp_c} / {sr_c} | "
             f"{m.get('avg_steps', 0.0):.2f} | {m.get('avg_latency_ms', 0.0):.1f} |"
         )

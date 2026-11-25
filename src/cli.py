@@ -134,6 +134,10 @@ def run_doctor(args: argparse.Namespace) -> int:
 SUBCOMMANDS: dict[str, tuple[str, str]] = {
     "doctor": ("src.cli", "Validate environment, dependencies, LLM endpoint config, and sandbox integrity."),
     "config-check": ("src.cli", "Alias for `doctor`: check `.env` & dual-role OpenAI-compatible configuration."),
+    "audit-experiments": (
+        "src.eval.manifest_audit",
+        "Audit frozen experiment lineage manifest, split isolation, and SFT-vs-GRPO CIs.",
+    ),
     "smoke-test": ("scripts.smoke_test", "Run 3-task end-to-end warehouse trajectory smoke test (`--mock` or live)."),
     "evolve": ("scripts.run_evolution", "Run GEPA / Greedy / Seed strategy self-evolution & RL trajectory export."),
     "train-sft": ("scripts.train_sft", "Run Stage-1 Loss-Masked Multi-Turn Trajectory SFT post-training."),
@@ -148,7 +152,7 @@ SUBCOMMANDS: dict[str, tuple[str, str]] = {
 def build_root_parser() -> argparse.ArgumentParser:
     epilog_lines = ["Available subcommands:"]
     for cmd, (_, desc) in SUBCOMMANDS.items():
-        epilog_lines.append(f"  {cmd:<14} {desc}")
+        epilog_lines.append(f"  {cmd:<18} {desc}")
     epilog_lines.append("\nRun `evodw <subcommand> --help` for subcommand-specific options.")
 
     parser = argparse.ArgumentParser(

@@ -1,0 +1,527 @@
+{
+  "manifest_version": "1.0.0",
+  "frozen_baseline_commit": "2c7af79",
+  "split_hygiene": {
+    "policy": "Strict 3-way physical isolation: `train` drives Reflector error attribution and SFT/GRPO rollouts; `val` governs Pareto frontier selection, SystemAwareMerger, and SFT/GRPO pool export; `test` (30 v1 + 18 Hard-v2 = 48 tasks) is strictly held out for final evaluation only. Any task manually inspected to refine prompts, linter rules, or reward weights must reside in train/val.",
+    "v1": {
+      "total": 75,
+      "train": 25,
+      "val": 20,
+      "test": 30,
+      "id_overlap_train_val": [],
+      "id_overlap_train_test": [],
+      "id_overlap_val_test": [],
+      "question_overlap_trainval_vs_test": 0
+    },
+    "hard_v2": {
+      "total": 45,
+      "train": 15,
+      "val": 12,
+      "test": 18,
+      "id_overlap_train_val": [],
+      "id_overlap_train_test": [],
+      "id_overlap_val_test": [],
+      "question_overlap_trainval_vs_test": 0
+    },
+    "combined": {
+      "total": 120,
+      "train": 40,
+      "val": 32,
+      "test": 48,
+      "id_overlap_train_val": [],
+      "id_overlap_train_test": [],
+      "id_overlap_val_test": [],
+      "question_overlap_trainval_vs_test": 0,
+      "cross_suite_id_overlap": []
+    }
+  },
+  "top_level_alias_note": "`outputs/policies/gepa_best_policy.json` and `outputs/runs/gepa_summary.json` reflect the most recent `evodw evolve` invocation (`hard_v2` / `hive`). Always load suite-specific policies from `outputs/policies/{v1_odps,hard_v2_odps,hard_v2_hive}/gepa_best_policy.json`.",
+  "online_evolution_runs": [
+    {
+      "suite": "v1",
+      "dialect": "odps",
+      "method": "seed",
+      "best_policy_id": "seed_v0",
+      "rollouts_used": 0,
+      "val_total": 20,
+      "val_ex": 0.85,
+      "test_total": 30,
+      "test_hits": 28,
+      "test_ex": 0.9333,
+      "test_ex_wilson_95_ci": [
+        0.7868,
+        0.9815
+      ],
+      "test_first_pass_gateway_rate": 0.6667,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/v1_odps/seed_summary.json",
+      "policy_path": "outputs/policies/v1_odps/seed_best_policy.json"
+    },
+    {
+      "suite": "v1",
+      "dialect": "odps",
+      "method": "greedy",
+      "best_policy_id": "greedy_g4",
+      "rollouts_used": 59,
+      "val_total": 20,
+      "val_ex": 0.95,
+      "test_total": 30,
+      "test_hits": 29,
+      "test_ex": 0.9667,
+      "test_ex_wilson_95_ci": [
+        0.8333,
+        0.9941
+      ],
+      "test_first_pass_gateway_rate": 1.0,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/v1_odps/greedy_summary.json",
+      "policy_path": "outputs/policies/v1_odps/greedy_best_policy.json"
+    },
+    {
+      "suite": "v1",
+      "dialect": "odps",
+      "method": "gepa",
+      "best_policy_id": "gepa_g3",
+      "rollouts_used": 65,
+      "val_total": 20,
+      "val_ex": 1.0,
+      "test_total": 30,
+      "test_hits": 30,
+      "test_ex": 1.0,
+      "test_ex_wilson_95_ci": [
+        0.8865,
+        1.0
+      ],
+      "test_first_pass_gateway_rate": 0.9667,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/v1_odps/gepa_summary.json",
+      "policy_path": "outputs/policies/v1_odps/gepa_best_policy.json"
+    },
+    {
+      "suite": "hard_v2",
+      "dialect": "odps",
+      "method": "seed",
+      "best_policy_id": "seed_v0",
+      "rollouts_used": 0,
+      "val_total": 12,
+      "val_ex": 0.5833,
+      "test_total": 18,
+      "test_hits": 10,
+      "test_ex": 0.5556,
+      "test_ex_wilson_95_ci": [
+        0.3372,
+        0.7544
+      ],
+      "test_first_pass_gateway_rate": 0.8333,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/hard_v2_odps/seed_summary.json",
+      "policy_path": "outputs/policies/hard_v2_odps/seed_best_policy.json"
+    },
+    {
+      "suite": "hard_v2",
+      "dialect": "odps",
+      "method": "greedy",
+      "best_policy_id": "greedy_g3",
+      "rollouts_used": 95,
+      "val_total": 12,
+      "val_ex": 0.9167,
+      "test_total": 18,
+      "test_hits": 13,
+      "test_ex": 0.7222,
+      "test_ex_wilson_95_ci": [
+        0.4913,
+        0.875
+      ],
+      "test_first_pass_gateway_rate": 1.0,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/hard_v2_odps/greedy_summary.json",
+      "policy_path": "outputs/policies/hard_v2_odps/greedy_best_policy.json"
+    },
+    {
+      "suite": "hard_v2",
+      "dialect": "odps",
+      "method": "gepa",
+      "best_policy_id": "gepa_g5",
+      "rollouts_used": 111,
+      "val_total": 12,
+      "val_ex": 1.0,
+      "test_total": 18,
+      "test_hits": 15,
+      "test_ex": 0.8333,
+      "test_ex_wilson_95_ci": [
+        0.6078,
+        0.9416
+      ],
+      "test_first_pass_gateway_rate": 0.9444,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/hard_v2_odps/gepa_summary.json",
+      "policy_path": "outputs/policies/hard_v2_odps/gepa_best_policy.json"
+    },
+    {
+      "suite": "hard_v2",
+      "dialect": "hive",
+      "method": "seed",
+      "best_policy_id": "seed_v0",
+      "rollouts_used": 0,
+      "val_total": 12,
+      "val_ex": 0.6667,
+      "test_total": 18,
+      "test_hits": 8,
+      "test_ex": 0.4444,
+      "test_ex_wilson_95_ci": [
+        0.2456,
+        0.6628
+      ],
+      "test_first_pass_gateway_rate": 0.7778,
+      "test_invalid_sql_rate": 0.1667,
+      "run_summary_path": "outputs/runs/hard_v2_hive/seed_summary.json",
+      "policy_path": "outputs/policies/hard_v2_hive/seed_best_policy.json"
+    },
+    {
+      "suite": "hard_v2",
+      "dialect": "hive",
+      "method": "gepa",
+      "best_policy_id": "gepa_g5",
+      "rollouts_used": 96,
+      "val_total": 12,
+      "val_ex": 1.0,
+      "test_total": 18,
+      "test_hits": 15,
+      "test_ex": 0.8333,
+      "test_ex_wilson_95_ci": [
+        0.6078,
+        0.9416
+      ],
+      "test_first_pass_gateway_rate": 1.0,
+      "test_invalid_sql_rate": 0.0,
+      "run_summary_path": "outputs/runs/hard_v2_hive/gepa_summary.json",
+      "policy_path": "outputs/policies/hard_v2_hive/gepa_best_policy.json"
+    }
+  ],
+  "rl_cohorts": {
+    "cohort_v0_1_5b_local_pilot": {
+      "status": "frozen_evaluated",
+      "base_model": "/data/llm-models/Qwen2.5-Coder-1.5B-Instruct",
+      "source_suite": "v1 (early pilot subset)",
+      "sft_trajectories": 85,
+      "grpo_steps": 8,
+      "eval_split": "v1 test (N=30)",
+      "eval_summary_path": "outputs/rl_eval/rl_eval_summary_1_5b_v1.json"
+    },
+    "cohort_v1_3b_colab_frozen": {
+      "status": "frozen_evaluated_primary",
+      "base_model": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "source_suite": "v1 (ODPS train + val)",
+      "sft_deduplicated_trajectories": 299,
+      "sft_first_pass_correct": 269,
+      "sft_self_repaired": 30,
+      "sft_probe_trajectories": 27,
+      "sft_effective_reweighted_episodes": 391,
+      "sft_global_steps": 147,
+      "grpo_prompt_count": 45,
+      "grpo_global_steps": 100,
+      "grpo_num_generations": 8,
+      "eval_split": "v1 test (N=30, strictly zero overlap with 299 SFT trajs & 45 GRPO prompts)",
+      "verified_subset_inside_current_rl_export": {
+        "v1_sft_records_in_disk_jsonl": 299,
+        "v1_first_pass_in_disk_jsonl": 269,
+        "v1_self_repaired_in_disk_jsonl": 30,
+        "v1_grpo_prompts_in_disk_jsonl": 45
+      },
+      "training_summaries": [
+        "outputs/colab_imports/sft_training_summary.json",
+        "outputs/colab_imports/grpo_dense_full_training_summary.json",
+        "outputs/colab_imports/grpo_outcome_only_training_summary.json"
+      ],
+      "eval_summary_path": "outputs/rl_eval/rl_eval_summary_3b.json"
+    },
+    "cohort_v2_combined_export": {
+      "status": "exported_untrained_next_stage",
+      "source_suite": "v1 (ODPS) + Hard-v2 (ODPS + Hive) incremental merge (`merge_existing=True`)",
+      "sft_deduplicated_trajectories": 624,
+      "lineage_decomposition": {
+        "from_cohort_v1_odps": 299,
+        "from_hard_v2_odps": 253,
+        "from_hard_v2_hive": 72
+      },
+      "sft_first_pass_correct": 553,
+      "sft_self_repaired": 71,
+      "grpo_prompt_count": 72,
+      "grpo_prompt_decomposition": {
+        "v1_train_val": 45,
+        "hard_v2_train_val": 27
+      },
+      "held_out_test_excluded_count": 48,
+      "export_summary_path": "outputs/rl_export/export_summary.json",
+      "reconciliation_note": "Current `outputs/rl_export/*` contains Cohort-v2 (624 SFT trajectories, 72 GRPO prompts) prepared for cross-suite training, whereas all frozen 3B results in `outputs/rl_experiment_report.md` were trained on Cohort-v1 (299 v1 SFT trajectories, 45 v1 GRPO prompts)."
+    }
+  },
+  "sft_vs_grpo_diagnostics": {
+    "statistical_power_audit": {
+      "test_task_count": 30,
+      "models": {
+        "base": {
+          "hits": 3,
+          "total": 30,
+          "ex": 0.1,
+          "wilson_95_ci": [
+            0.0346,
+            0.2562
+          ],
+          "first_pass_gateway_rate": 0.3,
+          "invalid_sql_rate": 0.5667,
+          "first_pass_correct_count": 2,
+          "self_repaired_count": 1
+        },
+        "base_gepa": {
+          "hits": 5,
+          "total": 30,
+          "ex": 0.1667,
+          "wilson_95_ci": [
+            0.0734,
+            0.3356
+          ],
+          "first_pass_gateway_rate": 0.6,
+          "invalid_sql_rate": 0.6667,
+          "first_pass_correct_count": 4,
+          "self_repaired_count": 1
+        },
+        "vertical_sql": {
+          "hits": 5,
+          "total": 30,
+          "ex": 0.1667,
+          "wilson_95_ci": [
+            0.0734,
+            0.3356
+          ],
+          "first_pass_gateway_rate": 0.4667,
+          "invalid_sql_rate": 0.7667,
+          "first_pass_correct_count": 5,
+          "self_repaired_count": 0
+        },
+        "sft": {
+          "hits": 16,
+          "total": 30,
+          "ex": 0.5333,
+          "wilson_95_ci": [
+            0.3614,
+            0.6977
+          ],
+          "first_pass_gateway_rate": 0.9333,
+          "invalid_sql_rate": 0.2667,
+          "first_pass_correct_count": 16,
+          "self_repaired_count": 0
+        },
+        "sft_grpo_sparse": {
+          "hits": 12,
+          "total": 30,
+          "ex": 0.4,
+          "wilson_95_ci": [
+            0.2459,
+            0.5768
+          ],
+          "first_pass_gateway_rate": 0.9,
+          "invalid_sql_rate": 0.3,
+          "first_pass_correct_count": 11,
+          "self_repaired_count": 1
+        },
+        "sft_grpo": {
+          "hits": 14,
+          "total": 30,
+          "ex": 0.4667,
+          "wilson_95_ci": [
+            0.3023,
+            0.6386
+          ],
+          "first_pass_gateway_rate": 0.9,
+          "invalid_sql_rate": 0.2667,
+          "first_pass_correct_count": 13,
+          "self_repaired_count": 1
+        },
+        "online": {
+          "hits": 30,
+          "total": 30,
+          "ex": 1.0,
+          "wilson_95_ci": [
+            0.8865,
+            1.0
+          ],
+          "first_pass_gateway_rate": 0.9667,
+          "invalid_sql_rate": 0.0,
+          "first_pass_correct_count": 29,
+          "self_repaired_count": 1
+        }
+      },
+      "sft_vs_dense_grpo_net_task_delta": -2,
+      "documented_dense_grpo_reversals_over_sft": [
+        "ja_11",
+        "rd_10"
+      ],
+      "min_discordant_pairs_sft_only_vs_grpo_only": [
+        4,
+        2
+      ],
+      "exact_mcnemar_two_sided_p_sft_vs_dense_grpo": 0.6875,
+      "exact_mcnemar_two_sided_p_sft_vs_base_upper_bound": 0.000244,
+      "exact_mcnemar_two_sided_p_dense_grpo_vs_base_upper_bound": 0.000977,
+      "paired_80pct_power_mde_pp_n30": 25.6,
+      "paired_80pct_power_mde_pp_n72": 16.5,
+      "interpretation": "On N=30 held-out v1 tasks, SFT (16/30 = 53.3%, 95% CI [36.1%, 69.8%]) vs Dense GRPO (14/30 = 46.7%, 95% CI [30.2%, 63.9%]) is a 2-task difference with exact McNemar p=0.6875 (well inside sampling noise; 80%-power paired MDE at N=30 is ~25.6pp). Gains over 3B Base (3/30 = 10.0%, +43.3pp for SFT and +36.7pp for Dense GRPO, p<=0.001) are statistically decisive."
+    },
+    "rollout_saturation_and_kl_dynamics": {
+      "grpo_prompt_pool_size": 45,
+      "grpo_prompts_already_covered_by_sft": 38,
+      "grpo_prompt_sft_overlap_ratio": 0.8444,
+      "sft_raw_trajectories": 299,
+      "sft_effective_upsampled_episodes": 391,
+      "sft_avg_trajectories_per_covered_task": 7.87,
+      "grpo_total_epochs_over_45_prompts": 4.44,
+      "dense_grpo": {
+        "logged_steps": 50,
+        "step2_online_ex_rate": 0.375,
+        "step4_online_ex_rate": 0.8125,
+        "mean_online_ex_rate": 0.4763,
+        "peak_online_ex_rate": 0.875,
+        "epoch1_mean_online_ex_rate": 0.4972,
+        "epoch2_plus_mean_online_ex_rate": 0.4598,
+        "epoch2_minus_epoch1_online_ex": -0.0373,
+        "convergence_step_80pct": 4,
+        "zero_reward_std_step_count": 3,
+        "zero_reward_std_step_ratio": 0.06,
+        "mean_frac_reward_zero_std": 0.03,
+        "near_zero_grad_norm_step_count": 1,
+        "step2_kl": 0.00037,
+        "mean_kl": 0.00466,
+        "final_kl": 0.0151,
+        "max_kl": 0.01628,
+        "mean_completion_tokens": 405.6,
+        "mean_gateway_pass_rate": 0.7913,
+        "mean_self_repair_ex_rate": 0.0437
+      },
+      "sparse_grpo": {
+        "logged_steps": 50,
+        "step2_online_ex_rate": 0.375,
+        "step4_online_ex_rate": 0.75,
+        "mean_online_ex_rate": 0.46,
+        "peak_online_ex_rate": 0.875,
+        "epoch1_mean_online_ex_rate": 0.4545,
+        "epoch2_plus_mean_online_ex_rate": 0.4643,
+        "epoch2_minus_epoch1_online_ex": 0.0097,
+        "convergence_step_80pct": 4,
+        "zero_reward_std_step_count": 16,
+        "zero_reward_std_step_ratio": 0.32,
+        "mean_frac_reward_zero_std": 0.17,
+        "near_zero_grad_norm_step_count": 10,
+        "step2_kl": 0.00037,
+        "mean_kl": 0.00264,
+        "final_kl": 0.00541,
+        "max_kl": 0.0076,
+        "mean_completion_tokens": 440.2,
+        "mean_gateway_pass_rate": 0.7612,
+        "mean_self_repair_ex_rate": 0.0512
+      },
+      "zero_variance_step_reduction_factor_dense_vs_sparse": 5.33
+    },
+    "category_tradeoffs": {
+      "fanout_dedup": {
+        "count": 6,
+        "sft_hits": 4,
+        "sft_ex": 0.6667,
+        "sft_first_pass_gw": 1.0,
+        "sft_invalid_sql": 0.0,
+        "sparse_grpo_hits": 2,
+        "sparse_grpo_ex": 0.3333,
+        "dense_grpo_hits": 3,
+        "dense_grpo_ex": 0.5,
+        "dense_grpo_first_pass_gw": 1.0,
+        "dense_grpo_invalid_sql": 0.3333
+      },
+      "json_array_unnest": {
+        "count": 6,
+        "sft_hits": 4,
+        "sft_ex": 0.6667,
+        "sft_first_pass_gw": 1.0,
+        "sft_invalid_sql": 0.3333,
+        "sparse_grpo_hits": 4,
+        "sparse_grpo_ex": 0.6667,
+        "dense_grpo_hits": 4,
+        "dense_grpo_ex": 0.6667,
+        "dense_grpo_first_pass_gw": 1.0,
+        "dense_grpo_invalid_sql": 0.1667
+      },
+      "partition_pruning": {
+        "count": 6,
+        "sft_hits": 4,
+        "sft_ex": 0.6667,
+        "sft_first_pass_gw": 0.8333,
+        "sft_invalid_sql": 0.3333,
+        "sparse_grpo_hits": 3,
+        "sparse_grpo_ex": 0.5,
+        "dense_grpo_hits": 3,
+        "dense_grpo_ex": 0.5,
+        "dense_grpo_first_pass_gw": 1.0,
+        "dense_grpo_invalid_sql": 0.0
+      },
+      "ratio_null_handling": {
+        "count": 6,
+        "sft_hits": 3,
+        "sft_ex": 0.5,
+        "sft_first_pass_gw": 1.0,
+        "sft_invalid_sql": 0.1667,
+        "sparse_grpo_hits": 3,
+        "sparse_grpo_ex": 0.5,
+        "dense_grpo_hits": 3,
+        "dense_grpo_ex": 0.5,
+        "dense_grpo_first_pass_gw": 1.0,
+        "dense_grpo_invalid_sql": 0.1667
+      },
+      "retention_date_math": {
+        "count": 6,
+        "sft_hits": 1,
+        "sft_ex": 0.1667,
+        "sft_first_pass_gw": 0.8333,
+        "sft_invalid_sql": 0.5,
+        "sparse_grpo_hits": 0,
+        "sparse_grpo_ex": 0.0,
+        "dense_grpo_hits": 1,
+        "dense_grpo_ex": 0.1667,
+        "dense_grpo_first_pass_gw": 0.5,
+        "dense_grpo_invalid_sql": 0.6667
+      }
+    },
+    "root_causes_grpo_below_sft_point_estimate": [
+      "Prompt-pool saturation: 38/45 (84.4%) of Cohort-v1 GRPO prompts were already trained on in Stage-1 SFT (avg 7.87 verified trajectories/task across 3 epochs), driving online_ex_rate from 37.5% (step 2) to 81.25% by step 4 and leaving limited positive exploration headroom.",
+      "Late-epoch KL drift on small pool: running 100 steps (~4.44 prompt passes at 2 prompts/step, logged as 2.22 dataset epochs) pushed Dense GRPO KL from 0.00037 (step 2) to 0.01510 (step 100) while mean online_ex_rate drifted from 49.72% (epoch <=1) to 45.98% (epoch >1).",
+      "Gateway/conciseness vs multi-CTE anti-fanout trade-off: 4-stage dense reward lifted partition_pruning 1st-pass gateway compliance from 83.3% to 100.0% (0.0% invalid SQL) and solved SFT failures ja_11 and rd_10, while step/length penalties (mean 405.6 vs 440.2 tokens) cost 1 task each on verbose multi-CTE fanout_dedup (4/6 -> 3/6) and partition_pruning (4/6 -> 3/6).",
+      "Dense vs Sparse reward necessity confirmed: Outcome-Only Sparse GRPO suffered group-wise zero-variance advantage starvation on 32.0% of logged steps (16/50 vs 3/50 in Dense, 5.33x higher) and collapsed to 0.0% (0/6) on retention_date_math."
+    ],
+    "actionable_next_stage_protocol": [
+      "Expand GRPO prompt pool from 45 (Cohort-v1) to 72+ (Cohort-v2 v1 + Hard-v2 + external schemas) and reserve non-upsampled prompts for RL.",
+      "Apply dynamic pass@G curriculum filtering (retain prompts with 0 < pass@8 < 1 under pi_SFT) to eliminate saturated/zero-variance rollouts.",
+      "Apply early checkpoint selection around 0.8-1.0 epoch before KL > 0.008 and relax length_free_chars (1400 -> 2400) for multi-CTE anti-fanout SQL."
+    ]
+  },
+  "artifact_sha256_normalized_utf8": {
+    "outputs/runs/v1_odps/seed_summary.json": "beaa690efd759a023419f51aeef60a451398f8450a93a7d7effcd0b0902840f5",
+    "outputs/runs/v1_odps/greedy_summary.json": "695a625a05d77b27616f44208b82f07f6bc21131cd6a44877ee0c84fc71bcd6b",
+    "outputs/runs/v1_odps/gepa_summary.json": "43dedbcc8f1d8bcdcde28bb80327df9a676707ef2432369b0d89d6bd158eb329",
+    "outputs/runs/hard_v2_odps/seed_summary.json": "ea7c7cb2960bf492883619355a65b69657163876e75d1be7e14a7a5df0862555",
+    "outputs/runs/hard_v2_odps/greedy_summary.json": "31f648afb08c0672a5056a842755ccee9608749c76d7fabb5898a9db34280539",
+    "outputs/runs/hard_v2_odps/gepa_summary.json": "2ee56ef34106939f7f2bc7632789fca54f5489c57f5e5d038dc5dbafbe4640e4",
+    "outputs/runs/hard_v2_hive/seed_summary.json": "70596b5c2823863088f993ad7ef17c79085b6aa54a7481d1fa5d3dd114c71111",
+    "outputs/runs/hard_v2_hive/gepa_summary.json": "72c8ab95ef24da94a6822aa8e9e819b028da41521919094239f661d9a247fa21",
+    "outputs/policies/v1_odps/gepa_best_policy.json": "36a9449fd73c4a2842dbabef6567dadb211bff6e23e5a0e6c025524b164cac15",
+    "outputs/policies/hard_v2_odps/gepa_best_policy.json": "78dc4d233065fb9293a7f5b7a1ca455d5e5789691474d330c7eea11badaef740",
+    "outputs/policies/hard_v2_hive/gepa_best_policy.json": "14e8f34e2d41d6fbb8b824f2e516b6d2eec2a46df8ebbe4c48da5aec08ce4570",
+    "outputs/rl_export/export_summary.json": "fb4a7238c541ad9ac9152d7b800a353ab305b7f80b1962b8cb8af27e114a6ad0",
+    "outputs/rl_export/sft_openai_tool_use.jsonl": "2f2f2d3c79302e7b00f2c10e3012d8da7dfaac09518de2349ea76ed813b85c4f",
+    "outputs/rl_export/sft_sharegpt.jsonl": "f77e78d296c8c7bfc34d476c68192aea34be860904f639f258183acc5164b684",
+    "outputs/rl_export/grpo_prompts.jsonl": "feca6f29f60f11a48c287146bcaa70f82c7f4d46a583b0a273d84b30661d0119",
+    "outputs/colab_imports/sft_training_summary.json": "f6b4e925072f16e0095f3290266471d1ccfae9796a098e04b043e65efb90fd32",
+    "outputs/colab_imports/grpo_dense_full_training_summary.json": "fb3ea57d3f3fafaab388a36b1bdb2a1faadd1321d42898f73ce717f109ac05cc",
+    "outputs/colab_imports/grpo_outcome_only_training_summary.json": "f9060a2af32a4d1b0d3afbf89169a62ffb0a2c173823873c84eeb15de79da6bd",
+    "outputs/colab_imports/rl_eval_summary_3b.json": "1eb1d3f6493b366e257eff854297b71cf3e2abb3189aee5eab3dfb116b30d45c",
+    "outputs/rl_eval/rl_eval_summary_1_5b_v1.json": "5a4e061703bf1f33c91c1fba73fc0a9e18359684ada5b00e01854fe8f7a559ee",
+    "outputs/rl_eval/rl_eval_summary_3b.json": "1eb1d3f6493b366e257eff854297b71cf3e2abb3189aee5eab3dfb116b30d45c"
+  }
+}

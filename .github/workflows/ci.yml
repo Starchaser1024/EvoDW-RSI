@@ -50,10 +50,11 @@ jobs:
             "huggingface-hub>=0.34.0,<1.0.0"
           python -m pip install -e . --no-deps
 
-      - name: Verify unified CLI & environment diagnostics
+      - name: Verify unified CLI, environment diagnostics, and frozen experiment manifest
         run: |
           python -m src --help
           python -m src doctor
+          python -m src audit-experiments
 
       - name: Run offline unit & integration test suite
         run: python -m pytest -q
