@@ -154,6 +154,10 @@ SUBCOMMANDS: dict[str, tuple[str, str]] = {
         "scripts.compare_fixed_budget",
         "Compare direct_sql, exec_feedback, evodw_seed, and evodw_gepa_transfer under fixed call cap.",
     ),
+    "inspect": (
+        "src.inspector.trace_inspector",
+        "Inspect multi-module SQL traces separating Executable from Caliber-Correct (EX).",
+    ),
     "smoke-test": ("scripts.smoke_test", "Run 3-task end-to-end warehouse trajectory smoke test (`--mock` or live)."),
     "evolve": ("scripts.run_evolution", "Run GEPA / Greedy / Seed strategy self-evolution & RL trajectory export."),
     "train-sft": ("scripts.train_sft", "Run Stage-1 Loss-Masked Multi-Turn Trajectory SFT post-training."),

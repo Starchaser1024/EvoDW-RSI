@@ -95,9 +95,10 @@ EvoDW-RSI/
 │   ├── llm/                        # client.py (DualRoleLLMClient), mock_client.py
 │   ├── env/                        # schema.py, gateway_linter.py, partition_pruning.py, local_executor.py, sandbox.py
 │   ├── agent/                      # policy.py, trajectory.py, linker.py, generator.py, refiner.py, pipeline.py
-│   ├── benchmarks/                 # catalog_builder.py, dw_generator.py, hard_v2_populator.py, v1/*, hard_v2_tasks.py
+│   ├── benchmarks/                 # catalog_builder.py, dw_generator.py, hard_v2_populator.py, v1/*, hard_v2_tasks.py, external_cross_schema.py
 │   ├── rsi/                        # attribution.py, dialect_guards.py, pareto.py, merger.py, scheduling.py, eval_cache.py, engine.py
-│   ├── eval/                       # comparator.py, metrics.py, reporter.py
+│   ├── eval/                       # comparator.py, metrics.py, reporter.py, manifest_audit.py, fixed_budget.py
+│   ├── inspector/                  # trace_inspector.py (双维判定 SQL 轨迹透视工作台：网关可执行 vs 业务口径正确)
 │   ├── export/                     # rl_bridge.py (SFT/GRPO 数据集导出与独立 reward_fn)
 │   └── rl/                         # config.py, model_utils.py, sft_dataset.py, sft_trainer.py, multiturn_rollout.py,
 │                                   # rewards.py, grpo_data.py, grpo_engine.py, grpo_trainer.py, hf_client.py, inference.py, eval_report.py
@@ -141,6 +142,12 @@ python -m pytest -q
 python scripts/smoke_test.py
 # 或强制连接实网 API 测试：
 evodw smoke-test --live
+
+# 启动双维判定 SQL 轨迹透视器（显式区分「语法与网关可执行 Executable」与「业务口径结果正确 EX」，定位静默口径陷阱）
+evodw inspect --mock
+# 按需导出零外部依赖交互式 HTML 工作台或启动本地 HTTP 服务（http://127.0.0.1:8765）：
+evodw inspect --mock --html-out /tmp/sql_trace_inspector.html
+evodw inspect --mock --serve --port 8765
 ```
 
 ### 3. 运行离线 GEPA 策略自进化与跨方言消融实验
