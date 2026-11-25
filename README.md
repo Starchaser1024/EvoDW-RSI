@@ -154,6 +154,10 @@ evodw evolve --suite hard_v2 --dialect odps --budget 115 --val-active-size 12 --
 
 # Hard-v2 Hive 跨方言零先验自进化（seed vs gepa）
 evodw evolve --suite hard_v2 --dialect hive --budget 105 --val-active-size 12 --method gepa
+
+# 外部跨 Schema 基准（external_bird_mini：金融/医疗/教育 11 表 24 题）等预算四方法对比
+# 同等 <=4 次调用上限下对比 direct_sql / exec_feedback / evodw_seed / evodw_gepa_transfer（离线验证加 --mock）
+evodw compare-methods --suite external_bird_mini --dialect odps --max-calls 4 --mock
 ```
 
 ### 4. 运行多轮工具交互 SFT 与 Observation-Masked Agentic GRPO
@@ -188,12 +192,15 @@ evodw eval-rl --model 3b --vertical-model xiyansql-3b \
 
 ## 实验基准与消融评测结果
 
-### 1. 企业数仓评测基准设计（15 张仿真表 · 120 道分层任务）
+### 1. 企业数仓与外部跨 Schema 评测基准设计（26 张分层表 · 144 道任务）
 
 | 基准套件 | 规模划分（Train / Val / Test） | 核心评测维度与高频深水区陷阱 |
 |---|---|---|
 | **`v1` 核心数仓套件** | **75 题**（`25 / 20 / 30`） | `partition_pruning`（多分区/异构 `ds`/`dt` 裁剪）、`json_array_unnest`（脏 JSON 与 `LATERAL VIEW OUTER explode`）、`retention_date_math`（跨月留存与双格式日期对齐）、`fanout_dedup`（一单多品×多次退货扇出膨胀与日志去重）、`ratio_null_handling`（冷启动除零与空串混杂） |
 | **`Hard-v2` 静默口径陷阱套件** | **45 题**（`15 / 12 / 18`） | 专攻**“通过网关且非空返回，但业务口径静默算错”**：`semantic_linking_trap`（V1 废弃残表干扰与非直观枚举码/分元换算）、`scd2_temporal_join`（SCD Type-2 历史区间切片 vs `is_current=1` 误用）、`silent_caliber_audit`（`LEFT JOIN` 右表过滤退化、同分窗口帧缺失、压测/异常流量污染） |
+| **`external_bird_mini` 外部跨领域数仓套件** | **24 题**（`6 / 6 / 12`，11 张表） | 建模自 BIRD Mini-Dev 三大非电商外部领域（零售信贷 `financial`、自身免疫临床住院 `thrombosis_clinical`、公立学校绩效 `california_schools`），含脏字符串比例、复合外键、异构 `ds`/`dt` 分区注入及每题逐项 SQLite->ODPS AST 转译台账，用于零微调检验已进化策略是否过拟合电商表名。 |
+
+> **外部基准适配口径声明**：`external_bird_mini` 对事实表注入了 `ds`/`dt` 分区契约并将 SQLite 语法（`IFNULL`、`STRFTIME`、`LIMIT a, b`）转译为 ODPS/Hive AST；其得分用于衡量**跨 Schema 与企业数仓网关约束泛化能力**，**严禁与原始无分区 SQLite 环境下的 BIRD-bench 官方榜单分数直接混同对比**。
 
 ### 2. 在线 GEPA 策略自进化与跨方言消融（Actor: `deepseek-v4.1-flash` / Reflector: `deepseek-v4-pro`）
 

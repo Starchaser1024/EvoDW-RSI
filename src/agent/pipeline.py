@@ -70,10 +70,12 @@ class MultiModuleSQLAgent:
         llm: BaseLLMClient,
         sandbox: WarehouseSandbox,
         max_refine_turns: int = 2,
+        max_total_llm_calls: int | None = None,
     ) -> None:
         self.llm = llm
         self.sandbox = sandbox
         self.max_refine_turns = max_refine_turns
+        self.max_total_llm_calls = max_total_llm_calls
         self.linker = WarehouseLinker(llm=llm, sandbox=sandbox)
         self.generator = DialectSQLGenerator(llm=llm)
         self.refiner = GatewayRefiner(llm=llm)
@@ -157,6 +159,8 @@ class MultiModuleSQLAgent:
         sanity_audit_done = False
 
         for r_turn in range(1, self.max_refine_turns + 1):
+            if self.max_total_llm_calls is not None and len(module_calls) >= self.max_total_llm_calls:
+                break
             suspicious, reason = self.sandbox.is_suspicious_result(current_exec)
             is_sanity_audit = False
             if not suspicious:

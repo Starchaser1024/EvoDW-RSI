@@ -16,7 +16,7 @@ CategoryType = Literal[
     "silent_caliber_audit",
 ]
 SplitType = Literal["train", "val", "test"]
-SuiteType = Literal["v1", "hard_v2", "all"]
+SuiteType = Literal["v1", "hard_v2", "all", "external_bird_mini"]
 
 
 @dataclass
@@ -32,3 +32,4 @@ class BenchmarkTask:
     ordered: bool = False
     gold_rows: list[tuple[Any, ...]] | None = field(default=None, repr=False)
     gold_columns: list[str] | None = field(default=None, repr=False)
+    metadata: dict[str, Any] = field(default_factory=dict, repr=False)

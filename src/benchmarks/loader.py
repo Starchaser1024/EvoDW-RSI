@@ -50,7 +50,12 @@ def load_benchmark(
     suite: SuiteType = "v1",
 ) -> LoadedBenchmark:
     """Create the populated warehouse sandbox and verify/cache dialect-invariant Gold answers."""
-    sandbox = create_populated_sandbox(seed=seed, dialect=dialect)
+    if suite == "external_bird_mini":
+        from src.benchmarks.external_cross_schema import create_external_cross_schema_sandbox
+
+        sandbox = create_external_cross_schema_sandbox(seed=seed, dialect=dialect)
+    else:
+        sandbox = create_populated_sandbox(seed=seed, dialect=dialect)
     tasks = get_all_tasks(suite=suite)
 
     if precompute_gold:

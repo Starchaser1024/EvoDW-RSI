@@ -227,7 +227,12 @@ def build_parser(parser: argparse.ArgumentParser | None = None) -> argparse.Argu
     p.add_argument("--val-active-size", type=int, default=None, help="Explicit stratified active val size.")
     p.add_argument("--method", choices=["seed", "greedy", "gepa"], default="gepa")
     p.add_argument("--run-ablation", action="store_true", help="Run seed, greedy, and gepa sequentially.")
-    p.add_argument("--suite", choices=["v1", "hard_v2", "all"], default="v1", help="Benchmark suite to run.")
+    p.add_argument(
+        "--suite",
+        choices=["v1", "hard_v2", "all", "external_bird_mini"],
+        default="v1",
+        help="Benchmark suite to run.",
+    )
     p.add_argument("--dialect", choices=["odps", "hive"], default=None)
     p.add_argument("--actor-model", default=None)
     p.add_argument("--reflector-model", default=None)

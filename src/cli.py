@@ -102,14 +102,26 @@ def run_doctor(args: argparse.Namespace) -> int:
     try:
         from src.agent import Policy
         from src.benchmarks.catalog_builder import build_warehouse_catalog
+        from src.benchmarks.external_cross_schema import build_external_cross_schema_catalog
         from src.benchmarks.tasks import get_all_tasks
 
         cat = build_warehouse_catalog()
+        ext_cat = build_external_cross_schema_catalog()
         v1_tasks = get_all_tasks("v1")
         v2_tasks = get_all_tasks("hard_v2")
+        ext_tasks = get_all_tasks("external_bird_mini")
         Policy.load_seed(settings.prompts_dir)
-        sandbox_ok = len(cat.list_tables()) == 15 and len(v1_tasks) == 75 and len(v2_tasks) == 45
-        sb_detail = f"15 tables | {len(v1_tasks)} v1 tasks + {len(v2_tasks)} Hard-v2 tasks | seed prompts verified"
+        sandbox_ok = (
+            len(cat.list_tables()) == 15
+            and len(ext_cat.list_tables()) == 11
+            and len(v1_tasks) == 75
+            and len(v2_tasks) == 45
+            and len(ext_tasks) == 24
+        )
+        sb_detail = (
+            f"15 core + 11 external tables | {len(v1_tasks)} v1 + {len(v2_tasks)} Hard-v2 "
+            f"+ {len(ext_tasks)} external tasks | seed prompts verified"
+        )
     except Exception as exc:
         sb_detail = f"Failed: {exc}"
 
@@ -137,6 +149,10 @@ SUBCOMMANDS: dict[str, tuple[str, str]] = {
     "audit-experiments": (
         "src.eval.manifest_audit",
         "Audit frozen experiment lineage manifest, split isolation, and SFT-vs-GRPO CIs.",
+    ),
+    "compare-methods": (
+        "scripts.compare_fixed_budget",
+        "Compare direct_sql, exec_feedback, evodw_seed, and evodw_gepa_transfer under fixed call cap.",
     ),
     "smoke-test": ("scripts.smoke_test", "Run 3-task end-to-end warehouse trajectory smoke test (`--mock` or live)."),
     "evolve": ("scripts.run_evolution", "Run GEPA / Greedy / Seed strategy self-evolution & RL trajectory export."),
