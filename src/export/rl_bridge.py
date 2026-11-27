@@ -29,13 +29,23 @@ def _get_default_sandbox(dialect: DialectType = "odps") -> WarehouseSandbox:
 def _get_task_map() -> dict[str, BenchmarkTask]:
     global _DEFAULT_TASK_MAP
     if _DEFAULT_TASK_MAP is None:
+        from src.benchmarks.loader import _PRECOMPUTED_GOLD_CACHE
+
         sb_odps = _get_default_sandbox("odps")
         all_t = get_all_tasks(suite="all")
         for t in all_t:
+            cache_key = (2026, "core", t.task_id)
+            cached = _PRECOMPUTED_GOLD_CACHE.get(cache_key)
+            if cached is not None:
+                t.gold_rows = list(cached[0])
+                t.gold_columns = list(cached[1])
+                continue
             res = sb_odps.run_sql(t.gold_sql, dialect="odps")
             if res["gateway_passed"] and res["error_stage"] == "none":
-                t.gold_rows = res["rows"]
-                t.gold_columns = res["columns"]
+                rows_l, cols_l = list(res["rows"]), list(res["columns"])
+                _PRECOMPUTED_GOLD_CACHE[cache_key] = (rows_l, cols_l)
+                t.gold_rows = list(rows_l)
+                t.gold_columns = list(cols_l)
         _DEFAULT_TASK_MAP = {t.task_id: t for t in all_t}
     return _DEFAULT_TASK_MAP
 

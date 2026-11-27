@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-import math
+from collections import OrderedDict
+import copy
 from dataclasses import dataclass
+import math
 from typing import Any, Literal
 
 from src.env.gateway_linter import GatewayLinter
@@ -12,6 +14,9 @@ from src.env.schema import WarehouseCatalog
 from src.eval.comparator import compare_result_sets
 
 DialectType = Literal["odps", "hive"]
+
+_SHARED_IMMUTABLE_SQL_CACHE: dict[str, OrderedDict[tuple[str, str], dict[str, Any]]] = {}
+_SHARED_IMMUTABLE_SAMPLE_CACHE: dict[str, dict[tuple[str, tuple[str, ...] | None, int], dict[str, Any]]] = {}
 
 
 @dataclass
@@ -39,6 +44,8 @@ class WarehouseSandbox:
         catalog: WarehouseCatalog,
         executor: LocalDuckDBExecutor,
         default_dialect: DialectType = "odps",
+        *,
+        immutable_cache_tag: str | None = None,
     ) -> None:
         self.catalog = catalog
         self.executor = executor
@@ -47,6 +54,13 @@ class WarehouseSandbox:
             "odps": GatewayLinter(catalog=catalog, dialect="odps"),
             "hive": GatewayLinter(catalog=catalog, dialect="hive"),
         }
+        if immutable_cache_tag:
+            self._sql_cache = _SHARED_IMMUTABLE_SQL_CACHE.setdefault(immutable_cache_tag, OrderedDict())
+            self._sample_cache = _SHARED_IMMUTABLE_SAMPLE_CACHE.setdefault(immutable_cache_tag, {})
+        else:
+            self._sql_cache = OrderedDict()
+            self._sample_cache = {}
+        self._sql_cache_max: int = 4096
 
     def run_sql(
         self,
@@ -56,10 +70,20 @@ class WarehouseSandbox:
     ) -> dict[str, Any]:
         """Run a query through Layer 1 (Gateway AST Linter) and Layer 2 (DuckDB Executor)."""
         active_dialect: DialectType = dialect or self.default_dialect
+        cache_key = (active_dialect, sql)
+        if timeout_sec >= 1.0 and cache_key in self._sql_cache:
+            self._sql_cache.move_to_end(cache_key)
+            cached = self._sql_cache[cache_key]
+            return {
+                **cached,
+                "columns": list(cached["columns"]),
+                "rows": list(cached["rows"]),
+            }
+
         linter = self._linters[active_dialect]
         lint_res = linter.lint(sql)
         if not lint_res.passed:
-            return {
+            out_fail = {
                 "gateway_passed": False,
                 "error_stage": "gateway_ast",
                 "error_msg": lint_res.error_msg,
@@ -70,13 +94,18 @@ class WarehouseSandbox:
                 "latency_ms": 0.0,
                 "transpiled_sql": "",
             }
+            if timeout_sec >= 1.0:
+                self._sql_cache[cache_key] = out_fail
+                if len(self._sql_cache) > self._sql_cache_max:
+                    self._sql_cache.popitem(last=False)
+            return {**out_fail, "columns": [], "rows": []}
 
         exec_res = self.executor.execute_warehouse_sql(
             sql=sql,
             dialect=active_dialect,
             timeout_sec=timeout_sec,
         )
-        return {
+        out_ok = {
             "gateway_passed": True,
             "error_stage": exec_res["error_stage"],
             "error_msg": exec_res["error_msg"],
@@ -86,6 +115,15 @@ class WarehouseSandbox:
             "row_count": exec_res["row_count"],
             "latency_ms": exec_res["latency_ms"],
             "transpiled_sql": exec_res["transpiled_sql"],
+        }
+        if timeout_sec >= 1.0:
+            self._sql_cache[cache_key] = out_ok
+            if len(self._sql_cache) > self._sql_cache_max:
+                self._sql_cache.popitem(last=False)
+        return {
+            **out_ok,
+            "columns": list(out_ok["columns"]),
+            "rows": list(out_ok["rows"]),
         }
 
     def inspect_table_sample(
@@ -98,6 +136,12 @@ class WarehouseSandbox:
         meta = self.catalog.get(table_name)
         if meta is None:
             return {"found": False, "error": f"Table '{table_name}' does not exist in catalog."}
+
+        norm_cols_key = tuple(sorted({col.lower() for col in columns})) if columns else None
+        sample_key = (meta.name, norm_cols_key, max(1, int(sample_rows)))
+        cached_sample = self._sample_cache.get(sample_key)
+        if cached_sample is not None:
+            return copy.deepcopy(cached_sample)
 
         pcol = meta.partition_col
         selected_cols = [
@@ -188,7 +232,7 @@ class WarehouseSandbox:
             for row in sample_res["rows"]
         ]
 
-        return {
+        result = {
             "found": True,
             "table_name": meta.name,
             "layer": meta.layer,
@@ -196,6 +240,8 @@ class WarehouseSandbox:
             "column_profiles": col_profiles,
             "sample_rows": serializable_rows,
         }
+        self._sample_cache[sample_key] = result
+        return copy.deepcopy(result)
 
     def evaluate_sql(
         self,

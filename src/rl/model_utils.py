@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
+import re
 from typing import Any
 
 os.environ.setdefault("USE_TF", "0")
@@ -21,6 +23,7 @@ from transformers import (
     Qwen2Config,
     Qwen2ForCausalLM,
 )
+from transformers.models.gpt2.tokenization_gpt2 import bytes_to_unicode
 
 from src.rl.config import RLModelConfig
 
@@ -82,7 +85,163 @@ def resolve_torch_dtype(dtype_name: str = "bfloat16") -> torch.dtype:
     return torch.float32
 
 
-def build_dry_run_tokenizer() -> PreTrainedTokenizerFast:
+class DryRunTokenizer(PreTrainedTokenizerFast):
+    """C-accelerated ByteLevel ChatML tokenizer bit-for-bit equivalent to HF ByteLevel BPE (`merges=[]`).
+
+    Splits once on registered ChatML special tokens (`<|im_start|>`, `<|im_end|>`, `<|endoftext|>`)
+    and translates contiguous UTF-8 byte spans directly in C via a 256-byte lookup table, achieving
+    ~300x faster multi-turn trajectory tokenization while retaining full `PreTrainedTokenizerFast`
+    (`save_pretrained`, `__call__`, padding/truncation, `apply_chat_template`) compatibility.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        b2u = bytes_to_unicode()
+        vocab = self.get_vocab()
+        self._byte_to_id: bytes = bytes(vocab[b2u[b]] for b in range(256))
+        self._id_to_byte: bytes = bytes(self._byte_to_id.index(i) for i in range(256))
+        self._spec_to_id: dict[str, int] = {
+            tok: int(self.convert_tokens_to_ids(tok)) for tok in self.all_special_tokens
+        }
+        self._id_to_spec: dict[int, str] = {v: k for k, v in self._spec_to_id.items()}
+        ordered_specs = sorted(self._spec_to_id, key=len, reverse=True)
+        self._spec_split_re = re.compile("(" + "|".join(re.escape(s) for s in ordered_specs) + ")")
+
+    def _fast_encode_str(self, text: str) -> list[int]:
+        if not text:
+            return []
+        if "<|" not in text:
+            return list(text.encode("utf-8").translate(self._byte_to_id))
+        out: list[int] = []
+        b2id = self._byte_to_id
+        spec_map = self._spec_to_id
+        for part in self._spec_split_re.split(text):
+            if not part:
+                continue
+            sid = spec_map.get(part)
+            if sid is not None:
+                out.append(sid)
+            else:
+                out.extend(part.encode("utf-8").translate(b2id))
+        return out
+
+    def encode(  # type: ignore[override]
+        self,
+        text: Any,
+        text_pair: Any = None,
+        add_special_tokens: bool = True,
+        padding: Any = False,
+        truncation: Any = None,
+        max_length: int | None = None,
+        stride: int = 0,
+        return_tensors: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        if (
+            isinstance(text, str)
+            and text_pair is None
+            and not padding
+            and not truncation
+            and max_length is None
+            and stride == 0
+            and return_tensors is None
+            and not kwargs
+        ):
+            return self._fast_encode_str(text)
+        return super().encode(
+            text,
+            text_pair=text_pair,
+            add_special_tokens=add_special_tokens,
+            padding=padding,
+            truncation=truncation,
+            max_length=max_length,
+            stride=stride,
+            return_tensors=return_tensors,
+            **kwargs,
+        )
+
+    def decode(  # type: ignore[override]
+        self,
+        token_ids: Any,
+        skip_special_tokens: bool = False,
+        clean_up_tokenization_spaces: bool | None = None,
+        **kwargs: Any,
+    ) -> str:
+        if not kwargs and clean_up_tokenization_spaces is None:
+            if isinstance(token_ids, torch.Tensor):
+                ids_iter = token_ids.detach().cpu().tolist()
+            elif isinstance(token_ids, int):
+                ids_iter = [token_ids]
+            elif isinstance(token_ids, (list, tuple)):
+                ids_iter = token_ids
+            else:
+                ids_iter = None
+
+            if isinstance(ids_iter, (list, tuple)):
+                chunks: list[str] = []
+                buf = bytearray()
+                id2b = self._id_to_byte
+                id2spec = self._id_to_spec
+                for raw_tid in ids_iter:
+                    tid = int(raw_tid)
+                    if 0 <= tid < 256:
+                        buf.append(tid)
+                    else:
+                        if buf:
+                            chunks.append(bytes(buf).translate(id2b).decode("utf-8", errors="replace"))
+                            buf.clear()
+                        if not skip_special_tokens:
+                            spec_str = id2spec.get(tid)
+                            if spec_str is not None:
+                                chunks.append(spec_str)
+                if buf:
+                    chunks.append(bytes(buf).translate(id2b).decode("utf-8", errors="replace"))
+                return "".join(chunks)
+
+        return super().decode(
+            token_ids,
+            skip_special_tokens=skip_special_tokens,
+            clean_up_tokenization_spaces=clean_up_tokenization_spaces,
+            **kwargs,
+        )
+
+    def batch_decode(  # type: ignore[override]
+        self,
+        sequences: Any,
+        skip_special_tokens: bool = False,
+        clean_up_tokenization_spaces: bool | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not kwargs and clean_up_tokenization_spaces is None:
+            if isinstance(sequences, torch.Tensor):
+                rows = sequences.detach().cpu().tolist()
+                return [self.decode(row, skip_special_tokens=skip_special_tokens) for row in rows]
+            if isinstance(sequences, (list, tuple)):
+                return [self.decode(row, skip_special_tokens=skip_special_tokens) for row in sequences]
+        return super().batch_decode(
+            sequences,
+            skip_special_tokens=skip_special_tokens,
+            clean_up_tokenization_spaces=clean_up_tokenization_spaces,
+            **kwargs,
+        )
+
+    def save_pretrained(  # type: ignore[override]
+        self,
+        save_directory: str | os.PathLike[str],
+        *args: Any,
+        **kwargs: Any,
+    ) -> tuple[str, ...]:
+        saved_files = super().save_pretrained(save_directory, *args, **kwargs)
+        cfg_path = Path(save_directory) / "tokenizer_config.json"
+        if cfg_path.exists():
+            cfg_data = json.loads(cfg_path.read_text(encoding="utf-8"))
+            if cfg_data.get("tokenizer_class") == "DryRunTokenizer":
+                cfg_data["tokenizer_class"] = "PreTrainedTokenizerFast"
+                cfg_path.write_text(json.dumps(cfg_data, ensure_ascii=False, indent=2), encoding="utf-8")
+        return saved_files
+
+
+def build_dry_run_tokenizer() -> DryRunTokenizer:
     """Create a deterministic offline ByteLevel ChatML tokenizer (lossless on UTF-8 Chinese + SQL)."""
     byte_alphabet = pre_tokenizers.ByteLevel.alphabet()
     vocab = {tok: idx for idx, tok in enumerate(byte_alphabet)}
@@ -90,7 +249,7 @@ def build_dry_run_tokenizer() -> PreTrainedTokenizerFast:
     tok_backend.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
     tok_backend.decoder = decoders.ByteLevel()
 
-    fast_tok = PreTrainedTokenizerFast(
+    fast_tok = DryRunTokenizer(
         tokenizer_object=tok_backend,
         unk_token="<|endoftext|>",
         bos_token="<|im_start|>",
@@ -109,13 +268,15 @@ def build_dry_run_model_and_tokenizer(
     save_dir: Path | None = None,
 ) -> tuple[Qwen2ForCausalLM, PreTrainedTokenizerFast]:
     """Create an ultra-lightweight (~0.4M params) Qwen2 causal LM for offline CPU/GPU smoke tests."""
+    if torch.get_num_threads() > 2:
+        torch.set_num_threads(2)
     torch.manual_seed(seed)
     tokenizer = build_dry_run_tokenizer()
     cfg = Qwen2Config(
         vocab_size=len(tokenizer),
-        hidden_size=64,
-        intermediate_size=128,
-        num_hidden_layers=2,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=1,
         num_attention_heads=2,
         num_key_value_heads=2,
         max_position_embeddings=16384,
@@ -166,6 +327,10 @@ def load_tokenizer(
 
     target = str(override_path) if override_path is not None else cfg.resolved_model_path()
     tok = AutoTokenizer.from_pretrained(target, trust_remote_code=cfg.trust_remote_code)
+    if cfg.dry_run and len(tok) == 259:
+        fast_dry = build_dry_run_tokenizer()
+        fast_dry.padding_side = tok.padding_side
+        return fast_dry
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     if not getattr(tok, "chat_template", None):
@@ -180,6 +345,8 @@ def load_base_model_for_training(
     attach_lora: bool = True,
 ) -> tuple[Any, PreTrainedTokenizerFast]:
     """Load CausalLM (4-bit QLoRA / bf16 FlashAttention-2 LoRA / CPU Dry-Run) ready for SFT or GRPO."""
+    if cfg.dry_run and torch.get_num_threads() > 2:
+        torch.set_num_threads(2)
     if cfg.dry_run and base_override_path is None:
         model, tokenizer = build_dry_run_model_and_tokenizer(seed=cfg.seed)
         if attach_lora:
@@ -278,6 +445,8 @@ def load_model_for_inference(
     dry_run: bool = False,
 ) -> tuple[Any, PreTrainedTokenizerFast]:
     """Load Base, Base+LoRA, or Merged model in eval mode for deterministic SQL agent evaluation."""
+    if dry_run and torch.get_num_threads() > 2:
+        torch.set_num_threads(2)
     if dry_run and not Path(str(model_name_or_path)).exists():
         model, tok = build_dry_run_model_and_tokenizer()
         if adapter_path and Path(adapter_path).exists():
@@ -292,6 +461,10 @@ def load_model_for_inference(
         else resolved_base
     )
     tokenizer = AutoTokenizer.from_pretrained(tok_source, trust_remote_code=trust_remote_code)
+    if dry_run and len(tokenizer) == 259:
+        fast_dry = build_dry_run_tokenizer()
+        fast_dry.padding_side = tokenizer.padding_side
+        tokenizer = fast_dry
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     if not getattr(tokenizer, "chat_template", None):

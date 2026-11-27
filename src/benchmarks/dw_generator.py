@@ -5,13 +5,15 @@ from __future__ import annotations
 import datetime as dt
 import json
 import random
+from typing import Any
 
 from src.benchmarks.catalog_builder import build_warehouse_catalog
 from src.benchmarks.hard_v2_populator import populate_hard_v2_tables
-from src.env.local_executor import LocalDuckDBExecutor
+from src.env.local_executor import LocalDuckDBExecutor, bulk_insert_rows
 from src.env.sandbox import DialectType, WarehouseSandbox
 
 _populate_hard_v2_tables = populate_hard_v2_tables
+_SEED_SNAPSHOT_CACHE: dict[int, list[tuple[str, str, list[list[Any]]]]] = {}
 
 
 def create_populated_sandbox(
@@ -21,8 +23,23 @@ def create_populated_sandbox(
     """Create an in-memory DuckDB sandbox populated with realistic enterprise warehouse data."""
     catalog = build_warehouse_catalog()
     executor = LocalDuckDBExecutor(catalog=catalog, db_path=":memory:")
-    rng = random.Random(seed)
     con = executor.conn
+
+    cached_snapshot = _SEED_SNAPSHOT_CACHE.get(seed)
+    if cached_snapshot is not None:
+        for ddl_sql, tbl_name, cols in cached_snapshot:
+            con.execute(ddl_sql)
+            if cols:
+                unnest_exprs = ", ".join(f"unnest(${i + 1})" for i in range(len(cols)))
+                con.execute(f"INSERT INTO {tbl_name} SELECT {unnest_exprs}", cols)
+        return WarehouseSandbox(
+            catalog=catalog,
+            executor=executor,
+            default_dialect=dialect,
+            immutable_cache_tag=f"core_seed_{seed}",
+        )
+
+    rng = random.Random(seed)
 
     # 1. Create tables.
     con.execute(
@@ -151,7 +168,7 @@ def create_populated_sandbox(
                 1 if rng.random() < 0.05 else 0,
             )
         )
-    con.executemany("INSERT INTO dim_user VALUES (?, ?, ?, ?, ?, ?, ?)", user_rows)
+    bulk_insert_rows(con, "dim_user", user_rows)
 
     # dim_shop (40 rows)
     cates = ["electronics", "beauty", "apparel", "home", "food"]
@@ -180,7 +197,7 @@ def create_populated_sandbox(
                 round(rng.uniform(4.15, 4.98), 2),
             )
         )
-    con.executemany("INSERT INTO dim_shop VALUES (?, ?, ?, ?, ?, ?)", shop_rows)
+    bulk_insert_rows(con, "dim_shop", shop_rows)
 
     # dim_item (200 rows)
     brands = ["BrandA", "BrandB", "BrandC", "BrandD", "BrandE", "BrandF", "", None]
@@ -207,7 +224,7 @@ def create_populated_sandbox(
                 "off_shelf" if rng.random() < 0.08 else "on_sale",
             )
         )
-    con.executemany("INSERT INTO dim_item VALUES (?, ?, ?, ?, ?, ?, ?)", item_rows)
+    bulk_insert_rows(con, "dim_item", item_rows)
 
     # dim_content_creator (80 rows)
     creator_tiers = ["head", "waist", "tail"]
@@ -234,7 +251,7 @@ def create_populated_sandbox(
                 fans,
             )
         )
-    con.executemany("INSERT INTO dim_content_creator VALUES (?, ?, ?, ?, ?)", creator_rows)
+    bulk_insert_rows(con, "dim_content_creator", creator_rows)
 
     # 3. Populate 21 days of partitioned tables: 2026-09-25 through 2026-10-15.
     days = [dt.date(2026, 9, 25) + dt.timedelta(days=d) for d in range(21)]
@@ -497,23 +514,11 @@ def create_populated_sandbox(
                 ad_spend = round(rng.uniform(50.0, 1800.0), 2)
             shop_metric_rows.append((sid, uv, pv, ocnt, bcnt, gmv, ret, ad_spend, ds))
 
-    con.executemany(
-        "INSERT INTO ods_app_event_log_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event_rows
-    )
-    con.executemany(
-        "INSERT INTO dwd_trade_order_di VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        order_rows,
-    )
-    con.executemany(
-        "INSERT INTO dwd_refund_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", refund_rows
-    )
-    con.executemany(
-        "INSERT INTO dwd_content_post_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", post_rows
-    )
-    con.executemany(
-        "INSERT INTO dws_shop_metrics_1d VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        shop_metric_rows,
-    )
+    bulk_insert_rows(con, "ods_app_event_log_di", event_rows)
+    bulk_insert_rows(con, "dwd_trade_order_di", order_rows)
+    bulk_insert_rows(con, "dwd_refund_di", refund_rows)
+    bulk_insert_rows(con, "dwd_content_post_di", post_rows)
+    bulk_insert_rows(con, "dws_shop_metrics_1d", shop_metric_rows)
 
     populate_hard_v2_tables(
         con=con,
@@ -525,4 +530,21 @@ def create_populated_sandbox(
         paid_orders_pool=paid_orders_pool,
     )
 
-    return WarehouseSandbox(catalog=catalog, executor=executor, default_dialect=dialect)
+    if len(_SEED_SNAPSHOT_CACHE) < 4:
+        snapshot: list[tuple[str, str, list[list[Any]]]] = []
+        ddl_map = dict(con.execute("SELECT table_name, sql FROM duckdb_tables() WHERE internal = false").fetchall())
+        for tmeta in catalog.list_tables():
+            ddl_sql = ddl_map.get(tmeta.name)
+            if not ddl_sql:
+                continue
+            rows = con.execute(f"SELECT * FROM {tmeta.name}").fetchall()
+            cols = [list(c) for c in zip(*rows)] if rows else []
+            snapshot.append((ddl_sql, tmeta.name, cols))
+        _SEED_SNAPSHOT_CACHE[seed] = snapshot
+
+    return WarehouseSandbox(
+        catalog=catalog,
+        executor=executor,
+        default_dialect=dialect,
+        immutable_cache_tag=f"core_seed_{seed}",
+    )

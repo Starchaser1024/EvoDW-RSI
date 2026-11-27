@@ -26,6 +26,7 @@ class LocalHFLLMClient(BaseLLMClient):
         tokenizer: Any,
         model_label: str = "qwen2.5-coder-local",
         max_new_tokens_cap: int | None = None,
+        max_prompt_tokens: int | None = None,
         max_batch_size: int = 10,
     ) -> None:
         super().__init__(actor_model=model_label, reflector_model=model_label)
@@ -33,6 +34,7 @@ class LocalHFLLMClient(BaseLLMClient):
         self.tokenizer = tokenizer
         self.device = next(model.parameters()).device
         self.max_new_tokens_cap = max_new_tokens_cap
+        self.max_prompt_tokens = max_prompt_tokens
         self.max_batch_size = max(1, max_batch_size)
         self._pending_queue: list[tuple[str, int, float, asyncio.Future[tuple[str, int, int, float]]]] = []
         self._flushing: bool = False
@@ -60,24 +62,24 @@ class LocalHFLLMClient(BaseLLMClient):
             max_new_tokens = min(max_new_tokens, self.max_new_tokens_cap)
 
         t0 = time.perf_counter()
-        prev_pad_side = self.tokenizer.padding_side
-        self.tokenizer.padding_side = "left"
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        try:
-            enc = self.tokenizer(
-                prompts,
-                return_tensors="pt",
-                padding=True,
-                add_special_tokens=False,
-            )
-        finally:
-            self.tokenizer.padding_side = prev_pad_side
+        pad_id = int(self.tokenizer.pad_token_id)
 
-        input_ids = enc["input_ids"].to(self.device)
-        attention_mask = enc["attention_mask"].to(self.device)
-        padded_len = int(input_ids.shape[1])
-        prompt_lens = [int(attention_mask[i].sum().item()) for i in range(len(prompts))]
+        encoded_rows: list[list[int]] = []
+        for p in prompts:
+            ids = list(self.tokenizer.encode(p, add_special_tokens=False))
+            if self.max_prompt_tokens is not None and len(ids) > self.max_prompt_tokens:
+                ids = ids[-self.max_prompt_tokens :]
+            encoded_rows.append(ids)
+
+        padded_len = max(max(1, len(r)) for r in encoded_rows)
+        prompt_lens = [len(r) for r in encoded_rows]
+        padded_inputs = [[pad_id] * (padded_len - len(r)) + (r if r else [pad_id]) for r in encoded_rows]
+        padded_attn = [[0] * (padded_len - len(r)) + ([1] * len(r) if r else [0]) for r in encoded_rows]
+
+        input_ids = torch.tensor(padded_inputs, dtype=torch.long, device=self.device)
+        attention_mask = torch.tensor(padded_attn, dtype=torch.long, device=self.device)
 
         eos_ids = self._get_eos_ids()
         gen_kwargs: dict[str, Any] = {
@@ -153,7 +155,7 @@ class LocalHFLLMClient(BaseLLMClient):
 
     async def _drain_queue(self) -> None:
         try:
-            await asyncio.sleep(0.015)
+            await asyncio.sleep(0.001 if self.max_prompt_tokens is not None else 0.015)
             while self._pending_queue:
                 batch = self._pending_queue[: self.max_batch_size]
                 del self._pending_queue[: self.max_batch_size]

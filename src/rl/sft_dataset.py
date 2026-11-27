@@ -218,6 +218,19 @@ def format_non_supervised_turn_chatml(turn: dict[str, Any]) -> str:
     return f"<|im_start|>{role}\n{content}<|im_end|>\n"
 
 
+def _get_tokenizer_turn_cache(tokenizer: PreTrainedTokenizerBase) -> dict[str, list[int]]:
+    cache = getattr(tokenizer, "_evodw_turn_cache", None)
+    if not isinstance(cache, dict):
+        cache = {}
+        try:
+            setattr(tokenizer, "_evodw_turn_cache", cache)
+        except Exception:
+            return {}
+    elif len(cache) > 4096:
+        cache.clear()
+    return cache
+
+
 def encode_multiturn_with_loss_mask(
     messages: list[dict[str, Any]],
     tokenizer: PreTrainedTokenizerBase,
@@ -231,7 +244,24 @@ def encode_multiturn_with_loss_mask(
     - For `loss_mask == 1` (`assistant` turns), the `<|im_start|>assistant\\n` role header and
       trailing newline get `labels = -100`, while `content + <|im_end|>` gets `labels = input_ids`.
     """
-    turn_chunks: list[tuple[list[int], list[int], int]] = []
+    turn_cache = _get_tokenizer_turn_cache(tokenizer)
+    header_key = "<|im_start|>assistant\n"
+    nl_key = "\n"
+    header_ids = turn_cache.get(header_key)
+    if header_ids is None:
+        header_ids = list(tokenizer.encode(header_key, add_special_tokens=False))
+        turn_cache[header_key] = header_ids
+    nl_ids = turn_cache.get(nl_key)
+    if nl_ids is None:
+        nl_ids = list(tokenizer.encode(nl_key, add_special_tokens=False))
+        turn_cache[nl_key] = nl_ids
+
+    header_mask = [IGNORE_INDEX] * len(header_ids)
+    nl_mask = [IGNORE_INDEX] * len(nl_ids)
+
+    turn_specs: list[tuple[list[int], int]] = []
+    untruncated_sup_tokens = 0
+    raw_untruncated_len = 0
 
     for turn in messages:
         role = str(turn.get("role", "user")).strip().lower()
@@ -240,75 +270,105 @@ def encode_multiturn_with_loss_mask(
         loss_mask = int(raw_mask) if raw_mask is not None else (1 if role == "assistant" else 0)
 
         if loss_mask == 1 and role == "assistant":
-            header_ids = tokenizer.encode("<|im_start|>assistant\n", add_special_tokens=False)
-            body_ids = tokenizer.encode(f"{content}<|im_end|>", add_special_tokens=False)
-            nl_ids = tokenizer.encode("\n", add_special_tokens=False)
+            body_text = f"{content}<|im_end|>"
+            body_ids = turn_cache.get(body_text)
+            if body_ids is None:
+                body_ids = list(tokenizer.encode(body_text, add_special_tokens=False))
+                if len(body_text) <= 8192:
+                    turn_cache[body_text] = body_ids
 
-            t_input = list(header_ids) + list(body_ids) + list(nl_ids)
-            t_labels = (
-                [IGNORE_INDEX] * len(header_ids)
-                + list(body_ids)
-                + [IGNORE_INDEX] * len(nl_ids)
-            )
-            turn_chunks.append((t_input, t_labels, 1))
+            untruncated_sup_tokens += len(body_ids)
+            raw_untruncated_len += len(header_ids) + len(body_ids) + len(nl_ids)
+            turn_specs.append((body_ids, 1))
         else:
             full_text = format_non_supervised_turn_chatml(turn)
-            t_input = list(tokenizer.encode(full_text, add_special_tokens=False))
-            t_labels = [IGNORE_INDEX] * len(t_input)
-            turn_chunks.append((t_input, t_labels, 0))
+            t_input_cached = turn_cache.get(full_text)
+            if t_input_cached is None:
+                t_input_cached = list(tokenizer.encode(full_text, add_special_tokens=False))
+                if len(full_text) <= 32768:
+                    turn_cache[full_text] = t_input_cached
+            raw_untruncated_len += len(t_input_cached)
+            turn_specs.append((t_input_cached, 0))
 
-    # Concatenate all turns.
-    input_ids: list[int] = []
-    labels: list[int] = []
-    for t_in, t_lb, _ in turn_chunks:
+    was_truncated = False
+    sup_token_count = untruncated_sup_tokens
+
+    # Fast single-pass construction when within max_seq_length (zero intermediate label lists).
+    if raw_untruncated_len <= max_seq_length:
+        input_ids: list[int] = []
+        labels: list[int] = []
+        for span_ids, is_sup in turn_specs:
+            if is_sup == 1:
+                input_ids.extend(header_ids)
+                input_ids.extend(span_ids)
+                input_ids.extend(nl_ids)
+                labels.extend(header_mask)
+                labels.extend(span_ids)
+                labels.extend(nl_mask)
+            else:
+                input_ids.extend(span_ids)
+                labels.extend([IGNORE_INDEX] * len(span_ids))
+        return {
+            "input_ids": input_ids,
+            "attention_mask": [1] * len(input_ids),
+            "labels": labels,
+            "was_truncated": False,
+            "raw_token_length": raw_untruncated_len,
+            "supervised_token_count": sup_token_count,
+        }
+
+    # Materialize per-turn chunks only when truncation is required.
+    turn_chunks: list[tuple[list[int], list[int], int]] = []
+    for span_ids, is_sup in turn_specs:
+        if is_sup == 1:
+            turn_chunks.append(
+                (header_ids + span_ids + nl_ids, header_mask + span_ids + nl_mask, 1)
+            )
+        else:
+            turn_chunks.append((span_ids, [IGNORE_INDEX] * len(span_ids), 0))
+
+    trimmed_chunks = list(turn_chunks)
+    while len(trimmed_chunks) > 1 and trimmed_chunks[-1][2] == 0:
+        trimmed_chunks.pop()
+        cur_len = sum(len(c[0]) for c in trimmed_chunks)
+        if cur_len <= max_seq_length:
+            break
+
+    # 2. If still over max_seq_length, preserve system turn + rightmost tail turns
+    #    so self-repair (`refiner`) and SQL (`generator`) assistant turns are never dropped!
+    cur_len = sum(len(c[0]) for c in trimmed_chunks)
+    if cur_len > max_seq_length and len(trimmed_chunks) > 2:
+        was_truncated = True
+        head_chunk = trimmed_chunks[0]
+        tail_chunks: list[tuple[list[int], list[int], int]] = []
+        budget = max_seq_length - len(head_chunk[0])
+        for ch in reversed(trimmed_chunks[1:]):
+            if sum(len(x[0]) for x in tail_chunks) + len(ch[0]) <= budget:
+                tail_chunks.append(ch)
+            else:
+                break
+        if tail_chunks and any(c[2] == 1 for c in tail_chunks):
+            trimmed_chunks = [head_chunk] + list(reversed(tail_chunks))
+
+    input_ids = []
+    labels = []
+    for t_in, t_lb, _ in trimmed_chunks:
         input_ids.extend(t_in)
         labels.extend(t_lb)
 
-    raw_untruncated_len = len(input_ids)
-    was_truncated = False
-
-    # Smart boundary-preserving truncation if caller requests a smaller max_seq_length:
-    # 1. First drop trailing post-answer masked observations (no supervised tokens lost).
+    # Final hard cap if a single huge turn still exceeds max_seq_length.
     if len(input_ids) > max_seq_length:
-        trimmed_chunks = list(turn_chunks)
-        while len(trimmed_chunks) > 1 and trimmed_chunks[-1][2] == 0:
-            trimmed_chunks.pop()
-            cur_len = sum(len(c[0]) for c in trimmed_chunks)
-            if cur_len <= max_seq_length:
-                break
+        was_truncated = True
+        left_labels = labels[:max_seq_length]
+        if any(x != IGNORE_INDEX for x in left_labels):
+            input_ids = input_ids[:max_seq_length]
+            labels = left_labels
+        else:
+            input_ids = input_ids[-max_seq_length:]
+            labels = labels[-max_seq_length:]
 
-        # 2. If still over max_seq_length, preserve system turn + rightmost tail turns
-        #    so self-repair (`refiner`) and SQL (`generator`) assistant turns are never dropped!
-        cur_len = sum(len(c[0]) for c in trimmed_chunks)
-        if cur_len > max_seq_length and len(trimmed_chunks) > 2:
-            was_truncated = True
-            head_chunk = trimmed_chunks[0]
-            tail_chunks: list[tuple[list[int], list[int], int]] = []
-            budget = max_seq_length - len(head_chunk[0])
-            for ch in reversed(trimmed_chunks[1:]):
-                if sum(len(x[0]) for x in tail_chunks) + len(ch[0]) <= budget:
-                    tail_chunks.append(ch)
-                else:
-                    break
-            if tail_chunks and any(c[2] == 1 for c in tail_chunks):
-                trimmed_chunks = [head_chunk] + list(reversed(tail_chunks))
-
-        input_ids = []
-        labels = []
-        for t_in, t_lb, _ in trimmed_chunks:
-            input_ids.extend(t_in)
-            labels.extend(t_lb)
-
-        # Final hard cap if a single huge turn still exceeds max_seq_length.
-        if len(input_ids) > max_seq_length:
-            was_truncated = True
-            left_labels = labels[:max_seq_length]
-            if any(x != IGNORE_INDEX for x in left_labels):
-                input_ids = input_ids[:max_seq_length]
-                labels = left_labels
-            else:
-                input_ids = input_ids[-max_seq_length:]
-                labels = labels[-max_seq_length:]
+    if was_truncated:
+        sup_token_count = sum(1 for y in labels if y != IGNORE_INDEX)
 
     attention_mask = [1] * len(input_ids)
     return {
@@ -317,6 +377,7 @@ def encode_multiturn_with_loss_mask(
         "labels": labels,
         "was_truncated": was_truncated,
         "raw_token_length": raw_untruncated_len,
+        "supervised_token_count": sup_token_count,
     }
 
 
@@ -353,29 +414,44 @@ class MultiTurnSFTDataset(Dataset):
         sup_toks = 0
         truncated_n = 0
         max_obs_len = 0
+        encoded_by_rec_id: dict[int, tuple[dict[str, Any], int, bool, int]] = {}
         for rec in expanded:
-            encoded = encode_multiturn_with_loss_mask(
-                rec["messages"],
-                tokenizer=tokenizer,
-                max_seq_length=max_seq_length,
-            )
-            sup_cnt = sum(1 for y in encoded["labels"] if y != IGNORE_INDEX)
-            if sup_cnt == 0:
-                raise ValueError(
-                    f"Trajectory {rec.get('id')} produced 0 supervised tokens after encoding!"
+            rec_key = id(rec)
+            cached_rec = encoded_by_rec_id.get(rec_key)
+            if cached_rec is None:
+                encoded = encode_multiturn_with_loss_mask(
+                    rec["messages"],
+                    tokenizer=tokenizer,
+                    max_seq_length=max_seq_length,
                 )
-            if encoded.get("was_truncated"):
-                truncated_n += 1
-            max_obs_len = max(max_obs_len, len(encoded["input_ids"]))
-            total_toks += len(encoded["input_ids"])
-            sup_toks += sup_cnt
-            self.examples.append(
-                {
+                sup_cnt = int(encoded["supervised_token_count"])
+                if sup_cnt == 0:
+                    raise ValueError(
+                        f"Trajectory {rec.get('id')} produced 0 supervised tokens after encoding!"
+                    )
+                example = {
                     "input_ids": encoded["input_ids"],
                     "attention_mask": encoded["attention_mask"],
                     "labels": encoded["labels"],
                 }
-            )
+                cached_rec = (
+                    example,
+                    sup_cnt,
+                    bool(encoded.get("was_truncated")),
+                    len(encoded["input_ids"]),
+                )
+                encoded_by_rec_id[rec_key] = cached_rec
+            else:
+                example, sup_cnt, _, _ = cached_rec
+
+            if cached_rec[2]:
+                truncated_n += 1
+            seq_len = cached_rec[3]
+            if seq_len > max_obs_len:
+                max_obs_len = seq_len
+            total_toks += seq_len
+            sup_toks += sup_cnt
+            self.examples.append(example)
 
         first_pass_n = sum(1 for r in records if not _is_self_repaired_record(r))
         repaired_n = sum(1 for r in records if _is_self_repaired_record(r))

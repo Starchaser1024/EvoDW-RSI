@@ -32,6 +32,7 @@ from src.rl.inference import (
     VerticalSQLZeroShotAgent,
 )
 from src.rl.model_utils import (
+    DryRunTokenizer,
     build_bnb_4bit_config,
     build_dry_run_model_and_tokenizer,
     build_dry_run_tokenizer,
@@ -76,6 +77,7 @@ from src.rl.sft_trainer import (
 __all__ = [
     "DEFAULT_BASE_MODEL",
     "DEFAULT_LORA_TARGET_MODULES",
+    "DryRunTokenizer",
     "GRPOTrainingConfig",
     "HierarchicalRewardBreakdown",
     "HierarchicalSQLReward",

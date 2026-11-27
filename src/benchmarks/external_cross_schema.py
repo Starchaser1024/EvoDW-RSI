@@ -17,7 +17,7 @@ import re
 from typing import Any
 
 from src.benchmarks.types import BenchmarkTask, CategoryType, SplitType
-from src.env.local_executor import LocalDuckDBExecutor
+from src.env.local_executor import LocalDuckDBExecutor, bulk_insert_rows
 from src.env.sandbox import DialectType, WarehouseSandbox
 from src.env.schema import ColumnMeta, TableMeta, WarehouseCatalog
 
@@ -368,7 +368,7 @@ def create_external_cross_schema_sandbox(
                 28_000 + (4 - ((did - 1) % 4)) * 3_400,
             )
         )
-    con.executemany("INSERT INTO fin_district VALUES (?, ?, ?, ?, ?, ?)", dist_rows)
+    bulk_insert_rows(con, "fin_district", dist_rows)
 
     freqs = ["POPLATEK MESICNE", "POPLATEK TYDNE", "POPLATEK PO OBRATU"]
     acct_rows = []
@@ -382,7 +382,7 @@ def create_external_cross_schema_sandbox(
         acct_dist_map[aid] = did
         acct_open_map[aid] = open_d
         acct_rows.append((aid, did, freqs[i % 3], open_d.strftime("%Y-%m-%d"), is_test))
-    con.executemany("INSERT INTO fin_account VALUES (?, ?, ?, ?, ?)", acct_rows)
+    bulk_insert_rows(con, "fin_account", acct_rows)
 
     loan_statuses = ["A", "B", "C", "D"]
     loan_rows = []
@@ -421,8 +421,8 @@ def create_external_cross_schema_sandbox(
                 )
                 txn_seq += 1
 
-    con.executemany("INSERT INTO fin_loan_contract_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", loan_rows)
-    con.executemany("INSERT INTO fin_card_txn_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", txn_rows)
+    bulk_insert_rows(con, "fin_loan_contract_di", loan_rows)
+    bulk_insert_rows(con, "fin_card_txn_di", txn_rows)
 
     # 2. Populate Clinical (`thrombosis_clinical`)
     sex_choices = ["F", "F", "M", "", None]
@@ -433,7 +433,7 @@ def create_external_cross_schema_sandbox(
         b_dt = dt.date(1965, 1, 1) + dt.timedelta(days=(i * 173) % 12_000)
         fv_dt = dt.date(2025, 1, 10) + dt.timedelta(days=(i * 9) % 240)
         pat_rows.append((pid, sex_choices[i % len(sex_choices)], b_dt.strftime("%Y-%m-%d"), fv_dt.strftime("%Y-%m-%d"), ref_codes[i % 3]))
-    con.executemany("INSERT INTO clin_patient VALUES (?, ?, ?, ?, ?)", pat_rows)
+    bulk_insert_rows(con, "clin_patient", pat_rows)
 
     diseases = ["SLE", "APS", "RA", "SSc"]
     scd_rows = []
@@ -448,7 +448,7 @@ def create_external_cross_schema_sandbox(
             scd_rows.append((pid, 1, base_dis, g_new, "2026-10-08", "9999-12-31", 1))
         else:
             scd_rows.append((pid, 1, base_dis, i % 3, "2025-01-01", "9999-12-31", 1))
-    con.executemany("INSERT INTO clin_diagnosis_scd2 VALUES (?, ?, ?, ?, ?, ?, ?)", scd_rows)
+    bulk_insert_rows(con, "clin_diagnosis_scd2", scd_rows)
 
     depts = ["RHEUM", "HEMAT", "IMMUNO"]
     enc_rows = []
@@ -482,8 +482,8 @@ def create_external_cross_schema_sandbox(
                 )
                 exam_seq += 1
 
-    con.executemany("INSERT INTO clin_encounter_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", enc_rows)
-    con.executemany("INSERT INTO clin_lab_exam_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", lab_rows)
+    bulk_insert_rows(con, "clin_encounter_di", enc_rows)
+    bulk_insert_rows(con, "clin_lab_exam_di", lab_rows)
 
     # 3. Populate Schools (`california_schools`)
     counties = ["Los Angeles", "Alameda", "Santa Clara", "Fresno"]
@@ -499,7 +499,7 @@ def create_external_cross_schema_sandbox(
         open_d = dt.date(open_yr, 9, 1)
         is_test = 1 if i % 18 == 0 else 0
         sch_rows.append((cds, cnty, dist, f"School_{i:02d}", is_charter, f_code, open_d.strftime("%Y-%m-%d"), is_test))
-    con.executemany("INSERT INTO edu_school_dim VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sch_rows)
+    bulk_insert_rows(con, "edu_school_dim", sch_rows)
 
     frpm_rows = []
     sat_rows = []
@@ -526,11 +526,16 @@ def create_external_cross_schema_sandbox(
                     ge1500 = int(takers * (0.18 + (i % 5) * 0.08))
                     sat_rows.append((cds, ay, takers, m_sc, r_sc, w_sc, ge1500, ds))
 
-    con.executemany("INSERT INTO edu_frpm_snap_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", frpm_rows)
-    con.executemany("INSERT INTO edu_sat_report_di VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sat_rows)
+    bulk_insert_rows(con, "edu_frpm_snap_di", frpm_rows)
+    bulk_insert_rows(con, "edu_sat_report_di", sat_rows)
 
     _ = rng
-    return WarehouseSandbox(catalog=catalog, executor=executor, default_dialect=dialect)
+    return WarehouseSandbox(
+        catalog=catalog,
+        executor=executor,
+        default_dialect=dialect,
+        immutable_cache_tag=f"ext_seed_{seed}",
+    )
 
 
 def _mk_ext_task(

@@ -71,8 +71,8 @@ def _rel_or_posix(path: Path) -> str:
 
 
 def _release_gpu() -> None:
-    gc.collect()
     if torch.cuda.is_available():
+        gc.collect()
         torch.cuda.empty_cache()
 
 
@@ -147,21 +147,23 @@ async def evaluate_local_variant(
             model=model,
             tokenizer=tokenizer,
             model_label=label,
-            max_new_tokens_cap=24 if dry_run else 1024,
+            max_new_tokens_cap=8 if dry_run else 1024,
+            max_prompt_tokens=96 if dry_run else None,
             max_batch_size=max(1, batch_size),
         )
         start_idx = len(trajs)
         chunk_size = max(1, batch_size)
+        eff_refine_turns = 1 if dry_run else 2
 
         if mode == "modular":
-            runner: Any = MultiModuleSQLAgent(llm=hf_client, sandbox=sandbox, max_refine_turns=2)
+            runner: Any = MultiModuleSQLAgent(llm=hf_client, sandbox=sandbox, max_refine_turns=eff_refine_turns)
         elif mode == "vertical_zeroshot":
             runner = VerticalSQLZeroShotAgent(hf_client=hf_client, sandbox=sandbox)
         else:
             runner = StatefulTrajectorySQLAgent(
                 hf_client=hf_client,
                 sandbox=sandbox,
-                max_refine_turns=2,
+                max_refine_turns=eff_refine_turns,
             )
 
         for idx in range(start_idx, len(tasks), chunk_size):

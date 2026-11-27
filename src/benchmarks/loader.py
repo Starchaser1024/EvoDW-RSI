@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any
 
 from src.benchmarks.dw_generator import create_populated_sandbox
 from src.benchmarks.tasks import BenchmarkTask, SuiteType, get_all_tasks
 from src.env.sandbox import DialectType, WarehouseSandbox
+
+_PRECOMPUTED_GOLD_CACHE: dict[tuple[int, str, str], tuple[list[tuple[Any, ...]], list[str]]] = {}
 
 
 @dataclass
@@ -59,7 +62,14 @@ def load_benchmark(
     tasks = get_all_tasks(suite=suite)
 
     if precompute_gold:
+        schema_kind = "ext" if suite == "external_bird_mini" else "core"
         for task in tasks:
+            cache_key = (seed, schema_kind, task.task_id)
+            cached = _PRECOMPUTED_GOLD_CACHE.get(cache_key)
+            if cached is not None:
+                task.gold_rows = list(cached[0])
+                task.gold_columns = list(cached[1])
+                continue
             # Ground-truth result rows over the deterministic DuckDB warehouse are dialect-invariant;
             # execute canonical Gold SQL via ODPS mode so Hive runs also evaluate against exact cached gold_rows.
             res = sandbox.run_sql(task.gold_sql, dialect="odps")
@@ -67,8 +77,11 @@ def load_benchmark(
                 raise RuntimeError(
                     f"Gold SQL failed for task {task.task_id}: {res['error_stage']} -> {res['error_msg']}"
                 )
-            task.gold_rows = res["rows"]
-            task.gold_columns = res["columns"]
+            rows_list = list(res["rows"])
+            cols_list = list(res["columns"])
+            _PRECOMPUTED_GOLD_CACHE[cache_key] = (rows_list, cols_list)
+            task.gold_rows = list(rows_list)
+            task.gold_columns = list(cols_list)
 
     train = [t for t in tasks if t.split == "train"]
     val = [t for t in tasks if t.split == "val"]

@@ -6,6 +6,8 @@ import datetime as dt
 import random
 from typing import Any
 
+from src.env.local_executor import bulk_insert_rows
+
 
 def populate_hard_v2_tables(
     *,
@@ -450,24 +452,9 @@ def populate_hard_v2_tables(
                 )
             )
 
-    con.executemany(
-        "INSERT INTO dim_user_vip_scd2 VALUES (?, ?, ?, ?, ?, ?, ?)", user_scd_rows
-    )
-    con.executemany(
-        "INSERT INTO dim_shop_commission_scd2 VALUES (?, ?, ?, ?, ?, ?, ?)", shop_scd_rows
-    )
-    con.executemany(
-        "INSERT INTO dwd_trade_order_legacy_di VALUES (?, ?, ?, ?, ?, ?, ?)", legacy_rows
-    )
-    con.executemany(
-        "INSERT INTO dwd_order_settle_di VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        settle_rows,
-    )
-    con.executemany(
-        "INSERT INTO dwd_aftersale_refund_di VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        aftersale_rows,
-    )
-    con.executemany(
-        "INSERT INTO dws_shop_operating_1d VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        operating_rows,
-    )
+    bulk_insert_rows(con, "dim_user_vip_scd2", user_scd_rows)
+    bulk_insert_rows(con, "dim_shop_commission_scd2", shop_scd_rows)
+    bulk_insert_rows(con, "dwd_trade_order_legacy_di", legacy_rows)
+    bulk_insert_rows(con, "dwd_order_settle_di", settle_rows)
+    bulk_insert_rows(con, "dwd_aftersale_refund_di", aftersale_rows)
+    bulk_insert_rows(con, "dws_shop_operating_1d", operating_rows)

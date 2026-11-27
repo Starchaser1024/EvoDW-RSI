@@ -78,7 +78,7 @@ def run_grpo_training(
     try:
         items = load_grpo_prompts(grpo_cfg.grpo_jsonl_path, strict_no_test_leakage=True)
         if model_cfg.dry_run:
-            items = items[:4]
+            items = items[:2]
 
         policy = _load_policy_safe(Path(grpo_cfg.policy_json_path))
         hf_dataset = build_grpo_hf_dataset(
@@ -145,9 +145,9 @@ def run_grpo_training(
             if (per_dev_bs * grad_accum) % num_gen != 0:
                 grad_accum = num_gen
 
-        max_prompt_len = 1024 if model_cfg.dry_run else grpo_cfg.max_prompt_length
-        max_comp_len = 128 if model_cfg.dry_run else grpo_cfg.max_completion_length
-        max_turn_new = 32 if model_cfg.dry_run else grpo_cfg.max_per_turn_new_tokens
+        max_prompt_len = min(96, grpo_cfg.max_prompt_length) if model_cfg.dry_run else grpo_cfg.max_prompt_length
+        max_comp_len = 48 if model_cfg.dry_run else grpo_cfg.max_completion_length
+        max_turn_new = 8 if model_cfg.dry_run else grpo_cfg.max_per_turn_new_tokens
         max_turns = 2 if model_cfg.dry_run else grpo_cfg.max_rollout_turns
 
         active_vllm = bool(grpo_cfg.use_vllm and use_cuda and is_vllm_available() and not model_cfg.use_4bit)

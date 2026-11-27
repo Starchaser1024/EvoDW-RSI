@@ -59,10 +59,22 @@ TRACKED_ARTIFACTS: tuple[str, ...] = (
 )
 
 
+_SHA256_MEMO: dict[tuple[str, int, int], str] = {}
+
+
 def normalized_utf8_sha256(path: Path) -> str:
     """Compute CRLF-invariant UTF-8 SHA-256 so Ubuntu and Windows checkouts produce identical digests."""
+    st = path.stat()
+    key = (str(path.resolve()), st.st_mtime_ns, st.st_size)
+    cached = _SHA256_MEMO.get(key)
+    if cached is not None:
+        return cached
     normalized = path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    if len(_SHA256_MEMO) >= 64:
+        _SHA256_MEMO.clear()
+    _SHA256_MEMO[key] = digest
+    return digest
 
 
 def wilson_confidence_interval(
@@ -111,16 +123,28 @@ def paired_mde_percentage_points(
     return round(min(1.0, mde) * 100.0, 1)
 
 
+_JSONL_MEMO: dict[tuple[str, int, int], list[dict[str, Any]]] = {}
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    return [
+    st = path.stat()
+    key = (str(path.resolve()), st.st_mtime_ns, st.st_size)
+    cached = _JSONL_MEMO.get(key)
+    if cached is not None:
+        return cached
+    rows = [
         json.loads(line)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    if len(_JSONL_MEMO) >= 16:
+        _JSONL_MEMO.clear()
+    _JSONL_MEMO[key] = rows
+    return rows
 
 
 def _normalize_question(text: str) -> str:

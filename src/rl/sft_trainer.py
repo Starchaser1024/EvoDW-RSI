@@ -139,7 +139,7 @@ def run_sft_training(
 
     records = load_sft_trajectories(sft_cfg.sft_jsonl_path, strict_no_test_leakage=True)
     if model_cfg.dry_run:
-        records = records[:8]
+        records = records[:4]
 
     dry_base_dir: Path | None = None
     if model_cfg.dry_run:
@@ -154,10 +154,11 @@ def run_sft_training(
         model, tokenizer = load_base_model_for_training(model_cfg, attach_lora=True)
 
     tokenizer.padding_side = "right"
+    eff_seq_len = min(256, sft_cfg.max_seq_length) if model_cfg.dry_run else sft_cfg.max_seq_length
     dataset = MultiTurnSFTDataset(
         records,
         tokenizer=tokenizer,
-        max_seq_length=sft_cfg.max_seq_length,
+        max_seq_length=eff_seq_len,
         upsample_self_repaired=1 if model_cfg.dry_run else sft_cfg.upsample_self_repaired,
         upsample_probe=1 if model_cfg.dry_run else sft_cfg.upsample_probe,
         adaptive_reweight=False if model_cfg.dry_run else sft_cfg.adaptive_reweight,
@@ -167,7 +168,7 @@ def run_sft_training(
     )
     collator = LossMaskedMultiTurnCollator(
         tokenizer=tokenizer,
-        max_seq_length=sft_cfg.max_seq_length,
+        max_seq_length=eff_seq_len,
         pad_to_multiple_of=8,
     )
 
