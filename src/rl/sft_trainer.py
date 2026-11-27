@@ -14,6 +14,7 @@ os.environ.setdefault('TRANSFORMERS_NO_TF', '1')
 import torch
 from transformers import Trainer, TrainerCallback, TrainingArguments
 
+from src.config import to_portable_posix_path
 from src.rl.config import RLModelConfig, SFTTrainingConfig
 from src.rl.model_utils import (
     build_dry_run_model_and_tokenizer,
@@ -266,12 +267,12 @@ def run_sft_training(
         "train_runtime_sec": elapsed_sec,
         "train_loss": round(float(train_res.training_loss), 5),
         "global_steps": int(train_res.global_step),
-        "resumed_from_checkpoint": resume_ckpt,
+        "resumed_from_checkpoint": to_portable_posix_path(resume_ckpt) if resume_ckpt else None,
         "loss_history": loss_history,
-        "live_curve_jsonl": str(curve_path),
-        "adapter_dir": str(adapter_dir),
-        "merged_dir": saved_merged_path,
-        "dry_run_base_dir": str(dry_base_dir) if dry_base_dir else None,
+        "live_curve_jsonl": to_portable_posix_path(curve_path),
+        "adapter_dir": to_portable_posix_path(adapter_dir),
+        "merged_dir": to_portable_posix_path(saved_merged_path) if saved_merged_path else None,
+        "dry_run_base_dir": to_portable_posix_path(dry_base_dir) if dry_base_dir else None,
     }
     summary_path.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2),

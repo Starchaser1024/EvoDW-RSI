@@ -32,6 +32,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from rich.console import Console
 from rich.table import Table
 
+from src.config import sanitize_host_paths_in_obj, to_portable_posix_path
 from src.rl.eval_report import render_rl_markdown_report
 
 
@@ -104,22 +105,42 @@ def _collect_json_payloads_from_path(
                 tar.extractall(path=tmp_path)
             for f in sorted(tmp_path.rglob("*")):
                 if f.is_file():
-                    shutil.copy2(f, import_dest_dir / f.name)
+                    dest = import_dest_dir / f.name
+                    if f.suffix == ".json":
+                        clean_obj = sanitize_host_paths_in_obj(
+                            json.loads(f.read_text(encoding="utf-8")), project_root=PROJECT_ROOT
+                        )
+                        dest.write_text(json.dumps(clean_obj, ensure_ascii=False, indent=2), encoding="utf-8")
+                    else:
+                        shutil.copy2(f, dest)
             for jf in sorted(tmp_path.rglob("rl_eval_summary*.json")):
-                loaded.append((jf.stem, json.loads(jf.read_text(encoding="utf-8"))))
+                clean_p = sanitize_host_paths_in_obj(
+                    json.loads(jf.read_text(encoding="utf-8")), project_root=PROJECT_ROOT
+                )
+                loaded.append((jf.stem, clean_p))
         return loaded
 
     if src.is_dir():
         for jf in sorted(src.glob("rl_eval_summary*.json")):
+            clean_p = sanitize_host_paths_in_obj(
+                json.loads(jf.read_text(encoding="utf-8")), project_root=PROJECT_ROOT
+            )
             if jf.parent.resolve() != import_dest_dir.resolve():
-                shutil.copy2(jf, import_dest_dir / jf.name)
-            loaded.append((jf.stem, json.loads(jf.read_text(encoding="utf-8"))))
+                (import_dest_dir / jf.name).write_text(
+                    json.dumps(clean_p, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+            loaded.append((jf.stem, clean_p))
         return loaded
 
     if src.is_file() and src.suffix == ".json":
+        clean_p = sanitize_host_paths_in_obj(
+            json.loads(src.read_text(encoding="utf-8")), project_root=PROJECT_ROOT
+        )
         if src.parent.resolve() != import_dest_dir.resolve():
-            shutil.copy2(src, import_dest_dir / src.name)
-        loaded.append((src.stem, json.loads(src.read_text(encoding="utf-8"))))
+            (import_dest_dir / src.name).write_text(
+                json.dumps(clean_p, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+        loaded.append((src.stem, clean_p))
         return loaded
 
     raise FileNotFoundError(f"Unsupported or missing Colab result input: {src}")
@@ -137,7 +158,9 @@ def merge_colab_results(
     scale_rows: list[dict[str, Any]] = []
 
     if baseline_v1_json is not None and baseline_v1_json.exists():
-        v1_data = json.loads(baseline_v1_json.read_text(encoding="utf-8"))
+        v1_data = sanitize_host_paths_in_obj(
+            json.loads(baseline_v1_json.read_text(encoding="utf-8")), project_root=PROJECT_ROOT
+        )
         # Preserve backup of v1 summary before overwriting json_out
         v1_backup = import_dir / "rl_eval_summary_v1_local_1.5b.json"
         import_dir.mkdir(parents=True, exist_ok=True)
@@ -189,9 +212,9 @@ def merge_colab_results(
     report_out.parent.mkdir(parents=True, exist_ok=True)
     report_out.write_text(report_md, encoding="utf-8")
 
-    merged_json = dict(primary)
+    merged_json = sanitize_host_paths_in_obj(dict(primary), project_root=PROJECT_ROOT)
     merged_json["scale_comparison"] = scale_rows
-    merged_json["report_path"] = str(report_out)
+    merged_json["report_path"] = to_portable_posix_path(report_out, project_root=PROJECT_ROOT)
     json_out.parent.mkdir(parents=True, exist_ok=True)
     json_out.write_text(json.dumps(merged_json, ensure_ascii=False, indent=2), encoding="utf-8")
     return merged_json

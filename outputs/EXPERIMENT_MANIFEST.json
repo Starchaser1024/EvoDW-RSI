@@ -201,7 +201,7 @@
   "rl_cohorts": {
     "cohort_v0_1_5b_local_pilot": {
       "status": "frozen_evaluated",
-      "base_model": "/data/llm-models/Qwen2.5-Coder-1.5B-Instruct",
+      "base_model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
       "source_suite": "v1 (early pilot subset)",
       "sft_trajectories": 85,
       "grpo_steps": 8,
@@ -517,11 +517,11 @@
     "outputs/rl_export/sft_openai_tool_use.jsonl": "2f2f2d3c79302e7b00f2c10e3012d8da7dfaac09518de2349ea76ed813b85c4f",
     "outputs/rl_export/sft_sharegpt.jsonl": "f77e78d296c8c7bfc34d476c68192aea34be860904f639f258183acc5164b684",
     "outputs/rl_export/grpo_prompts.jsonl": "feca6f29f60f11a48c287146bcaa70f82c7f4d46a583b0a273d84b30661d0119",
-    "outputs/colab_imports/sft_training_summary.json": "f6b4e925072f16e0095f3290266471d1ccfae9796a098e04b043e65efb90fd32",
-    "outputs/colab_imports/grpo_dense_full_training_summary.json": "fb3ea57d3f3fafaab388a36b1bdb2a1faadd1321d42898f73ce717f109ac05cc",
-    "outputs/colab_imports/grpo_outcome_only_training_summary.json": "f9060a2af32a4d1b0d3afbf89169a62ffb0a2c173823873c84eeb15de79da6bd",
-    "outputs/colab_imports/rl_eval_summary_3b.json": "1eb1d3f6493b366e257eff854297b71cf3e2abb3189aee5eab3dfb116b30d45c",
-    "outputs/rl_eval/rl_eval_summary_1_5b_v1.json": "5a4e061703bf1f33c91c1fba73fc0a9e18359684ada5b00e01854fe8f7a559ee",
-    "outputs/rl_eval/rl_eval_summary_3b.json": "1eb1d3f6493b366e257eff854297b71cf3e2abb3189aee5eab3dfb116b30d45c"
+    "outputs/colab_imports/sft_training_summary.json": "c64c5580bd7e2d0df288a95f567a37cb042f878c4263aa022e05f8805851351d",
+    "outputs/colab_imports/grpo_dense_full_training_summary.json": "5b3573c41f938cd549b830c3ecbb87087d5ebf3a0c6b51f678e603e3a92993cf",
+    "outputs/colab_imports/grpo_outcome_only_training_summary.json": "567e44dc37f735627bbdc8a346a4cea324224032e9842191cc0ea75a7b93e1e3",
+    "outputs/colab_imports/rl_eval_summary_3b.json": "1c3db692df6522ed411ab256192b9109ace803eeb79fb484ac01a7db033878d9",
+    "outputs/rl_eval/rl_eval_summary_1_5b_v1.json": "3c35b3ff02234eced9d9f6d162df43cea9f9ceeb236f507b1bc0ccc8f479ced8",
+    "outputs/rl_eval/rl_eval_summary_3b.json": "1c3db692df6522ed411ab256192b9109ace803eeb79fb484ac01a7db033878d9"
   }
 }

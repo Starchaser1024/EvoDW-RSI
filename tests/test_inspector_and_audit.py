@@ -20,6 +20,7 @@ from src.eval.manifest_audit import (
     build_experiment_manifest,
     exact_mcnemar_two_sided_p,
     normalized_utf8_sha256,
+    scan_outputs_for_host_path_leaks,
     wilson_confidence_interval,
 )
 from src.inspector.trace_inspector import (
@@ -48,7 +49,7 @@ class TestExperimentManifestAndAudit:
     def test_frozen_manifest_passes_all_invariants_and_crlf_hash_invariance(self, tmp_path: Path):
         passed, checks, manifest = audit_experiment_manifest(project_root=PROJECT_ROOT)
         assert passed is True, f"Audit failed: {checks}"
-        assert len(checks) == 5
+        assert len(checks) == 6
         assert all(c["passed"] for c in checks)
 
         c1 = manifest["rl_cohorts"]["cohort_v1_3b_colab_frozen"]
@@ -78,6 +79,27 @@ class TestExperimentManifestAndAudit:
         assert any(not c["passed"] and "Checksums" in c["check"] for c in checks)
 
         assert cli_main(["audit-experiments"]) == 0
+
+    def test_zero_host_or_colab_absolute_paths_in_tracked_outputs(self, tmp_path: Path):
+        scanned_n, leaks = scan_outputs_for_host_path_leaks(project_root=PROJECT_ROOT)
+        assert scanned_n >= 20
+        assert leaks == []
+
+        for jf in sorted((PROJECT_ROOT / "outputs").rglob("*.json")):
+            txt = jf.read_text(encoding="utf-8")
+            for forbidden in ("/home/", "/Users/", "/content/", "C:\\Users", "C:\\\\Users", "C:/Users"):
+                assert forbidden not in txt, f"Leaked host path {forbidden!r} in {jf}"
+
+        # Verify detector catches leaked host/Colab/Windows paths in synthetic outputs tree
+        fake_out = tmp_path / "outputs" / "colab_imports"
+        fake_out.mkdir(parents=True, exist_ok=True)
+        (fake_out / "leaked.json").write_text(
+            json.dumps({"adapter_dir": "/content/colab_workspace/ckpt", "win": "C:\\Users\\dev\\out"}),
+            encoding="utf-8",
+        )
+        _, detected = scan_outputs_for_host_path_leaks(project_root=tmp_path)
+        assert len(detected) == 1
+        assert "outputs/colab_imports/leaked.json" in detected[0]
 
     def test_sft_vs_grpo_quantitative_log_diagnostics(self):
         dyn = analyze_sft_vs_grpo_dynamics(project_root=PROJECT_ROOT)

@@ -29,6 +29,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from rich.console import Console
 from rich.table import Table
 
+from src.config import to_portable_posix_path
+
 SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"sk-[A-Za-z0-9]{20,}"),
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
@@ -529,10 +531,7 @@ def pack_colab_bundle(
     sha256_hex = hashlib.sha256(bundle_out_path.read_bytes()).hexdigest()
 
     def _rel_or_posix(p: Path) -> str:
-        try:
-            return p.resolve().relative_to(project_root.resolve()).as_posix()
-        except ValueError:
-            return p.as_posix()
+        return to_portable_posix_path(p, project_root=project_root)
 
     manifest = {
         "generated_at": dt.datetime.now().isoformat(timespec="seconds"),

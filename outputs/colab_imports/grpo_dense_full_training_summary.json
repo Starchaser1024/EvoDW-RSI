@@ -33,10 +33,10 @@
     "ex_outcome_efficiency_reward"
   ],
   "prompt_count": 45,
-  "base_model_used": "/content/colab_workspace/checkpoints_3b/sft/sft_merged",
-  "adapter_dir": "/content/colab_workspace/checkpoints_3b/grpo_dense_full/grpo_adapter",
+  "base_model_used": "colab_workspace/checkpoints_3b/sft/sft_merged",
+  "adapter_dir": "colab_workspace/checkpoints_3b/grpo_dense_full/grpo_adapter",
   "resumed_from_checkpoint": null,
-  "live_curve_jsonl": "/content/colab_workspace/curves_3b/grpo_dense_full_curve.jsonl",
+  "live_curve_jsonl": "colab_workspace/curves_3b/grpo_dense_full_curve.jsonl",
   "train_runtime_sec": 5108.0,
   "global_steps": 100,
   "train_loss": 0.2638,

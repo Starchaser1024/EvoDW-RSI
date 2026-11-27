@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from src.config import PROJECT_ROOT, DialectType
+from src.config import PROJECT_ROOT, DialectType, to_portable_posix_path
 
 MODEL_PRESETS: dict[str, str] = {
     "1.5b": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
@@ -110,7 +110,7 @@ class RLModelConfig:
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["target_modules"] = list(self.target_modules)
-        data["resolved_model_path"] = self.resolved_model_path()
+        data["resolved_model_path"] = to_portable_posix_path(self.resolved_model_path())
         return data
 
 
@@ -146,9 +146,11 @@ class SFTTrainingConfig:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
-        d["sft_jsonl_path"] = str(self.sft_jsonl_path)
-        d["output_dir"] = str(self.output_dir)
-        d["live_curve_jsonl_path"] = str(self.live_curve_jsonl_path) if self.live_curve_jsonl_path else None
+        d["sft_jsonl_path"] = to_portable_posix_path(self.sft_jsonl_path)
+        d["output_dir"] = to_portable_posix_path(self.output_dir)
+        d["live_curve_jsonl_path"] = (
+            to_portable_posix_path(self.live_curve_jsonl_path) if self.live_curve_jsonl_path else None
+        )
         return d
 
 
@@ -245,9 +247,13 @@ class GRPOTrainingConfig:
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
-        d["grpo_jsonl_path"] = str(self.grpo_jsonl_path)
-        d["sft_checkpoint_dir"] = str(self.sft_checkpoint_dir) if self.sft_checkpoint_dir else None
-        d["policy_json_path"] = str(self.policy_json_path)
-        d["output_dir"] = str(self.output_dir)
-        d["live_curve_jsonl_path"] = str(self.live_curve_jsonl_path) if self.live_curve_jsonl_path else None
+        d["grpo_jsonl_path"] = to_portable_posix_path(self.grpo_jsonl_path)
+        d["sft_checkpoint_dir"] = (
+            to_portable_posix_path(self.sft_checkpoint_dir) if self.sft_checkpoint_dir else None
+        )
+        d["policy_json_path"] = to_portable_posix_path(self.policy_json_path)
+        d["output_dir"] = to_portable_posix_path(self.output_dir)
+        d["live_curve_jsonl_path"] = (
+            to_portable_posix_path(self.live_curve_jsonl_path) if self.live_curve_jsonl_path else None
+        )
         return d

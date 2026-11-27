@@ -40,7 +40,7 @@ from src.agent.policy import Policy
 from src.agent.trajectory import AgentTrajectory
 from src.benchmarks.loader import load_benchmark
 from src.benchmarks.tasks import BenchmarkTask
-from src.config import Settings
+from src.config import Settings, sanitize_host_paths_in_obj, to_portable_posix_path
 from src.env.sandbox import DialectType, WarehouseSandbox
 from src.eval.metrics import compute_eval_metrics
 from src.llm.client import DualRoleLLMClient
@@ -64,10 +64,7 @@ def _pct(v: float) -> str:
 
 
 def _rel_or_posix(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix()
-    except ValueError:
-        return path.as_posix()
+    return to_portable_posix_path(path, project_root=PROJECT_ROOT)
 
 
 def _release_gpu() -> None:
@@ -436,26 +433,29 @@ async def run_full_evaluation(
         output_report_path.parent.mkdir(parents=True, exist_ok=True)
         output_report_path.write_text(report_md, encoding="utf-8")
 
-        summary_payload = {
-            "version": "v2",
-            "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
-            "base_model": resolved_base,
-            "base_model_short": short_model_name,
-            "test_task_count": len(test_tasks),
-            "models": {name: m for name, m in results_ordered},
-            "variants_by_key": metrics_by_short_key,
-            "vertical_comparison": vertical_comp,
-            "ablation_comparison": {
-                "dense_curve": summarize_grpo_curve(grpo_sum),
-                "sparse_curve": summarize_grpo_curve(sparse_sum),
-                "test_metrics": ablation_test_metrics,
+        summary_payload = sanitize_host_paths_in_obj(
+            {
+                "version": "v2",
+                "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
+                "base_model": to_portable_posix_path(resolved_base, project_root=PROJECT_ROOT),
+                "base_model_short": short_model_name,
+                "test_task_count": len(test_tasks),
+                "models": {name: m for name, m in results_ordered},
+                "variants_by_key": metrics_by_short_key,
+                "vertical_comparison": vertical_comp,
+                "ablation_comparison": {
+                    "dense_curve": summarize_grpo_curve(grpo_sum),
+                    "sparse_curve": summarize_grpo_curve(sparse_sum),
+                    "test_metrics": ablation_test_metrics,
+                },
+                "sft_training_summary": sft_sum,
+                "grpo_training_summary": grpo_sum,
+                "grpo_sparse_training_summary": sparse_sum,
+                "case_studies": case_studies[:5],
+                "report_path": _rel_or_posix(output_report_path),
             },
-            "sft_training_summary": sft_sum,
-            "grpo_training_summary": grpo_sum,
-            "grpo_sparse_training_summary": sparse_sum,
-            "case_studies": case_studies[:5],
-            "report_path": _rel_or_posix(output_report_path),
-        }
+            project_root=PROJECT_ROOT,
+        )
         output_json_path.parent.mkdir(parents=True, exist_ok=True)
         output_json_path.write_text(json.dumps(summary_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 

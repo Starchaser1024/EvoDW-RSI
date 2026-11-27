@@ -15,7 +15,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from src.config import PROJECT_ROOT
+from src.config import PROJECT_ROOT, to_portable_posix_path
 
 V1_CATEGORIES: frozenset[str] = frozenset(
     {
@@ -474,7 +474,10 @@ def build_experiment_manifest(project_root: Path = PROJECT_ROOT) -> dict[str, An
         "rl_cohorts": {
             "cohort_v0_1_5b_local_pilot": {
                 "status": "frozen_evaluated",
-                "base_model": eval_1_5b.get("base_model", "Qwen/Qwen2.5-Coder-1.5B-Instruct"),
+                "base_model": to_portable_posix_path(
+                    str(eval_1_5b.get("base_model", "Qwen/Qwen2.5-Coder-1.5B-Instruct")),
+                    project_root=project_root,
+                ),
                 "source_suite": "v1 (early pilot subset)",
                 "sft_trajectories": 85,
                 "grpo_steps": 8,
@@ -542,6 +545,38 @@ def build_experiment_manifest(project_root: Path = PROJECT_ROOT) -> dict[str, An
         "sft_vs_grpo_diagnostics": dynamics,
         "artifact_sha256_normalized_utf8": artifacts_checksums,
     }
+
+
+FORBIDDEN_HOST_PATH_MARKERS: tuple[str, ...] = (
+    "/home/",
+    "/Users/",
+    "/content/",
+    "C:\\Users",
+    "C:/Users",
+    "/data/llm-models/",
+)
+
+
+def scan_outputs_for_host_path_leaks(project_root: Path = PROJECT_ROOT) -> tuple[int, list[str]]:
+    """Scan all tracked `outputs/**/*.json` files for leaked host/Colab absolute filesystem paths."""
+    outputs_dir = project_root / "outputs"
+    if not outputs_dir.exists():
+        return 0, []
+    skip_dirs = {"cache", "rl_checkpoints", ".live_cache"}
+    json_files = [
+        p
+        for p in sorted(outputs_dir.rglob("*.json"))
+        if p.is_file() and not any(part in skip_dirs for part in p.relative_to(outputs_dir).parts)
+    ]
+    leaks: list[str] = []
+    for jf in json_files:
+        raw_txt = jf.read_text(encoding="utf-8")
+        rel = jf.relative_to(project_root).as_posix()
+        for marker in (*FORBIDDEN_HOST_PATH_MARKERS, "C:\\\\Users"):
+            if marker in raw_txt:
+                leaks.append(f"{rel} ({marker})")
+                break
+    return len(json_files), leaks
 
 
 def audit_experiment_manifest(
@@ -702,6 +737,16 @@ def audit_experiment_manifest(
             if (len(mismatches) == 0 and struct_match)
             else f"mismatched_hashes={mismatches}, struct_match={struct_match}",
         )
+
+    # 6. Zero host/Colab absolute path leaks across tracked outputs/**/*.json
+    scanned_cnt, path_leaks = scan_outputs_for_host_path_leaks(project_root=project_root)
+    _add(
+        "No Host Absolute Path Leaks in Tracked Outputs",
+        len(path_leaks) == 0 and scanned_cnt > 0,
+        f"{scanned_cnt} JSON artifacts verified free of /home/, /Users/, /content/, and C:\\Users paths"
+        if len(path_leaks) == 0
+        else f"leaked_paths={path_leaks}",
+    )
 
     all_passed = all(c["passed"] for c in checks)
     return all_passed, checks, live_manifest

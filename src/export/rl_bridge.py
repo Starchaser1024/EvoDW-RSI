@@ -12,6 +12,7 @@ from src.agent.generator import clean_sql_text
 from src.agent.trajectory import AgentTrajectory
 from src.benchmarks.dw_generator import create_populated_sandbox
 from src.benchmarks.tasks import BenchmarkTask, get_all_tasks
+from src.config import PROJECT_ROOT, to_portable_posix_path
 from src.env.sandbox import DialectType, WarehouseSandbox
 from src.llm.client import JSONParseError, extract_json_object
 from src.rsi.attribution import repair_prompt_dialect_violations
@@ -359,11 +360,7 @@ def export_sft_and_grpo_datasets(
 
 
 def _rel_or_posix(path: Path) -> str:
-    root = Path(__file__).resolve().parents[2]
-    try:
-        return path.resolve().relative_to(root).as_posix()
-    except ValueError:
-        return path.as_posix()
+    return to_portable_posix_path(path, project_root=PROJECT_ROOT)
 
 
 def _extract_sql_from_trajectory(trajectory: str | list[dict[str, Any]] | AgentTrajectory) -> str:

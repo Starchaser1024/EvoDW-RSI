@@ -17,7 +17,7 @@ from trl import GRPOConfig, GRPOTrainer
 
 from src.agent.policy import Policy
 from src.benchmarks.dw_generator import create_populated_sandbox
-from src.config import PROJECT_ROOT
+from src.config import PROJECT_ROOT, to_portable_posix_path
 from src.env.sandbox import WarehouseSandbox
 from src.rl.config import GRPOTrainingConfig, RLModelConfig, RewardStageWeights
 from src.rl.grpo_data import (
@@ -251,10 +251,10 @@ def run_grpo_training(
             "reward_weights": weights.to_dict(),
             "active_reward_funcs": [fn.__name__ for fn in reward_funcs],
             "prompt_count": len(hf_dataset),
-            "base_model_used": base_used,
-            "adapter_dir": str(adapter_dir),
-            "resumed_from_checkpoint": resume_ckpt,
-            "live_curve_jsonl": str(curve_path),
+            "base_model_used": to_portable_posix_path(base_used),
+            "adapter_dir": to_portable_posix_path(adapter_dir),
+            "resumed_from_checkpoint": to_portable_posix_path(resume_ckpt) if resume_ckpt else None,
+            "live_curve_jsonl": to_portable_posix_path(curve_path),
             "train_runtime_sec": elapsed_sec,
             "global_steps": int(train_res.global_step),
             "train_loss": round(float(train_res.training_loss), 5),

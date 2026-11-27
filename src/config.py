@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import re
 from typing import Any, Literal
 
 from dotenv import load_dotenv
@@ -104,3 +105,85 @@ class Settings:
                 setattr(settings, key, value)
 
         return settings
+
+
+_KNOWN_HF_LEAF_MODELS: dict[str, str] = {
+    "Qwen2.5-Coder-1.5B-Instruct": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+    "Qwen2.5-Coder-3B-Instruct": "Qwen/Qwen2.5-Coder-3B-Instruct",
+    "Qwen2.5-Coder-7B-Instruct": "Qwen/Qwen2.5-Coder-7B-Instruct",
+    "XiYanSQL-QwenCoder-3B-2504": "XGenerationLab/XiYanSQL-QwenCoder-3B-2504",
+    "XiYanSQL-QwenCoder-7B-2504": "XGenerationLab/XiYanSQL-QwenCoder-7B-2504",
+}
+
+_HOST_PATH_PREFIX_RE = re.compile(
+    r"^(?:/(?:home|Users)/[^/]+/|/content/|[A-Za-z]:/(?:Users|Temp)/[^/]+/|/tmp/|/var/folders/[^/]+/)"
+)
+
+
+def to_portable_posix_path(path_or_str: str | Path, project_root: Path = PROJECT_ROOT) -> str:
+    """Normalize any local host, Windows, or Colab filesystem path into a portable relative POSIX path."""
+    if isinstance(path_or_str, Path):
+        try:
+            return path_or_str.resolve().relative_to(project_root.resolve()).as_posix()
+        except ValueError:
+            raw = str(path_or_str)
+    else:
+        raw = str(path_or_str)
+
+    s = raw.strip().replace("\\", "/")
+    if not s:
+        return s
+
+    root_posix = project_root.resolve().as_posix().rstrip("/")
+    if root_posix and s.startswith(root_posix + "/"):
+        return s[len(root_posix) + 1 :]
+
+    if s.startswith("/content/EvoDW-RSI/"):
+        return s[len("/content/EvoDW-RSI/") :]
+    if s.startswith("/content/drive/MyDrive/EvoDW_RL_v2_Workspace/"):
+        return "colab_workspace/" + s[len("/content/drive/MyDrive/EvoDW_RL_v2_Workspace/") :]
+    if s.startswith("/content/"):
+        return s[len("/content/") :]
+
+    if s.startswith("/data/llm-models/"):
+        leaf = s.rstrip("/").split("/")[-1]
+        return _KNOWN_HF_LEAF_MODELS.get(leaf, f"models/{leaf}")
+
+    repo_marker = "/EvoDW-RSI/"
+    if repo_marker in s:
+        return s.split(repo_marker, 1)[1]
+
+    leaf_candidate = s.rstrip("/").split("/")[-1]
+    if _HOST_PATH_PREFIX_RE.match(s) and leaf_candidate in _KNOWN_HF_LEAF_MODELS:
+        return _KNOWN_HF_LEAF_MODELS[leaf_candidate]
+
+    if _HOST_PATH_PREFIX_RE.match(s):
+        cleaned = _HOST_PATH_PREFIX_RE.sub("", s)
+        parts = [p for p in cleaned.split("/") if p]
+        if "outputs" in parts:
+            idx = parts.index("outputs")
+            return "/".join(parts[idx:])
+        if "colab_workspace" in parts:
+            idx = parts.index("colab_workspace")
+            return "/".join(parts[idx:])
+        return "/".join(parts[-3:]) if len(parts) > 3 else "/".join(parts)
+
+    return s
+
+
+def sanitize_host_paths_in_obj(obj: Any, project_root: Path = PROJECT_ROOT) -> Any:
+    """Recursively sanitize leaked host/Colab filesystem path strings inside JSON-serializable structures."""
+    if isinstance(obj, dict):
+        return {k: sanitize_host_paths_in_obj(v, project_root=project_root) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_host_paths_in_obj(v, project_root=project_root) for v in obj]
+    if isinstance(obj, Path):
+        return to_portable_posix_path(obj, project_root=project_root)
+    if isinstance(obj, str) and "\n" not in obj and len(obj) < 512:
+        norm = obj.replace("\\", "/")
+        if (
+            norm.startswith(("/home/", "/Users/", "/content/", "/data/llm-models/"))
+            or re.match(r"^[A-Za-z]:/Users/", norm)
+        ):
+            return to_portable_posix_path(obj, project_root=project_root)
+    return obj

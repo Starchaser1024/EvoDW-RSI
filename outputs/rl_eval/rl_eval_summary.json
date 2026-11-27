@@ -869,8 +869,8 @@
       "resolved_model_path": "Qwen/Qwen2.5-Coder-3B-Instruct"
     },
     "sft_config": {
-      "sft_jsonl_path": "/content/EvoDW-RSI/outputs/rl_export/sft_openai_tool_use.jsonl",
-      "output_dir": "/content/colab_workspace/checkpoints_3b/sft",
+      "sft_jsonl_path": "outputs/rl_export/sft_openai_tool_use.jsonl",
+      "output_dir": "colab_workspace/checkpoints_3b/sft",
       "max_seq_length": 9216,
       "num_train_epochs": 3.0,
       "max_steps": -1,
@@ -885,7 +885,7 @@
       "save_steps": 25,
       "save_total_limit": 2,
       "resume_from_checkpoint": true,
-      "live_curve_jsonl_path": "/content/colab_workspace/curves_3b/sft_live_curve.jsonl",
+      "live_curve_jsonl_path": "colab_workspace/curves_3b/sft_live_curve.jsonl",
       "save_merged_model": true,
       "adaptive_reweight": true,
       "upsample_self_repaired": 2,
@@ -1031,9 +1031,9 @@
         "loss": 0.2985
       }
     ],
-    "live_curve_jsonl": "/content/colab_workspace/curves_3b/sft_live_curve.jsonl",
-    "adapter_dir": "/content/colab_workspace/checkpoints_3b/sft/sft_adapter",
-    "merged_dir": "/content/colab_workspace/checkpoints_3b/sft/sft_merged",
+    "live_curve_jsonl": "colab_workspace/curves_3b/sft_live_curve.jsonl",
+    "adapter_dir": "colab_workspace/checkpoints_3b/sft/sft_adapter",
+    "merged_dir": "colab_workspace/checkpoints_3b/sft/sft_merged",
     "dry_run_base_dir": null
   },
   "grpo_training_summary": {
@@ -1071,10 +1071,10 @@
       "ex_outcome_efficiency_reward"
     ],
     "prompt_count": 45,
-    "base_model_used": "/content/colab_workspace/checkpoints_3b/sft/sft_merged",
-    "adapter_dir": "/content/colab_workspace/checkpoints_3b/grpo_dense_full/grpo_adapter",
+    "base_model_used": "colab_workspace/checkpoints_3b/sft/sft_merged",
+    "adapter_dir": "colab_workspace/checkpoints_3b/grpo_dense_full/grpo_adapter",
     "resumed_from_checkpoint": null,
-    "live_curve_jsonl": "/content/colab_workspace/curves_3b/grpo_dense_full_curve.jsonl",
+    "live_curve_jsonl": "colab_workspace/curves_3b/grpo_dense_full_curve.jsonl",
     "train_runtime_sec": 5108.0,
     "global_steps": 100,
     "train_loss": 0.2638,
@@ -2872,10 +2872,10 @@
       "ex_outcome_efficiency_reward"
     ],
     "prompt_count": 45,
-    "base_model_used": "/content/colab_workspace/checkpoints_3b/sft/sft_merged",
-    "adapter_dir": "/content/colab_workspace/checkpoints_3b/grpo_outcome_only/grpo_adapter",
+    "base_model_used": "colab_workspace/checkpoints_3b/sft/sft_merged",
+    "adapter_dir": "colab_workspace/checkpoints_3b/grpo_outcome_only/grpo_adapter",
     "resumed_from_checkpoint": null,
-    "live_curve_jsonl": "/content/colab_workspace/curves_3b/grpo_outcome_only_curve.jsonl",
+    "live_curve_jsonl": "colab_workspace/curves_3b/grpo_outcome_only_curve.jsonl",
     "train_runtime_sec": 5437.74,
     "global_steps": 100,
     "train_loss": 0.1958,

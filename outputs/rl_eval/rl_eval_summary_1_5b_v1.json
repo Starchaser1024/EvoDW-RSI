@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-11-16T22:21:58",
-  "base_model": "/data/llm-models/Qwen2.5-Coder-1.5B-Instruct",
+  "base_model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
   "test_task_count": 30,
   "models": {
     "Base 小模型 (Qwen2.5-Coder-1.5B-Instruct Zero-shot)": {
