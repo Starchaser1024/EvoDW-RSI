@@ -40,6 +40,9 @@ rl = [
 where = ["."]
 include = ["src*"]
 
+[tool.setuptools.package-data]
+"src.inspector" = ["*.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"

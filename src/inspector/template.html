@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EvoDW-RSI SQL Trace Inspector — Executable vs Caliber-Correct</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --border: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --pass-bg: #064e3b;
+    --pass-fg: #6ee7b7;
+    --fail-bg: #7f1d1d;
+    --fail-fg: #fca5a5;
+    --trap-bg: #78350f;
+    --trap-fg: #fcd34d;
+    --accent: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+  }
+  header { max-width: 1320px; margin: 0 auto 20px auto; }
+  h1 { margin: 0 0 6px 0; font-size: 22px; color: #f8fafc; }
+  .subtitle { color: var(--muted); font-size: 14px; }
+  .kpi-grid {
+    max-width: 1320px; margin: 0 auto 20px auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;
+  }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+  }
+  .kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .kpi .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .kpi.trap { border-color: #d97706; background: rgba(120, 53, 15, 0.28); }
+  .controls {
+    max-width: 1320px; margin: 0 auto 18px auto;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px;
+  }
+  select, input {
+    background: #0f172a; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 11px; font-size: 13px;
+  }
+  input { flex: 1; min-width: 240px; }
+  .trace-list { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;
+  }
+  .card.silent_caliber_trap { border-left: 5px solid #f59e0b; }
+  .card.gateway_or_syntax_block { border-left: 5px solid #ef4444; }
+  .card.self_repaired_pass, .card.first_pass_pass { border-left: 5px solid #10b981; }
+  .card-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .badge.pass { background: var(--pass-bg); color: var(--pass-fg); border: 1px solid #059669; }
+  .badge.fail { background: var(--fail-bg); color: var(--fail-fg); border: 1px solid #dc2626; }
+  .badge.trap { background: var(--trap-bg); color: var(--trap-fg); border: 1px solid #d97706; }
+  .badge.meta { background: #0f172a; color: var(--accent); border: 1px solid var(--border); }
+  .question { font-size: 14px; margin: 8px 0 12px 0; color: #e2e8f0; }
+  .stage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+  @media (max-width: 900px) { .stage-grid { grid-template-columns: 1fr; } }
+  .box { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 13px; }
+  .box h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--accent); }
+  pre {
+    margin: 6px 0 0 0; padding: 10px; background: #020617; border: 1px solid #1e293b;
+    border-radius: 6px; overflow-x: auto; font-size: 12px; color: #e2e8f0; white-space: pre-wrap;
+  }
+  ul.facts { margin: 4px 0 0 18px; padding: 0; color: #cbd5e1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EvoDW-RSI SQL &amp; Multi-Module Trajectory Inspector</h1>
+  <div class="subtitle">Explicitly decoupling <strong>语法与网关可执行 (Gateway-Executable)</strong> from <strong>业务口径结果正确 (Caliber-Correct / EX)</strong> to expose silent warehouse caliber traps.</div>
+</header>
+
+<section class="kpi-grid">
+  <div class="kpi">
+    <div class="label">Inspected Traces</div>
+    <div class="value">__TOTAL_TRACES__</div>
+  </div>
+  <div class="kpi">
+    <div class="label">语法与网关可执行 (Executable)</div>
+    <div class="value">__EXECUTABLE_COUNT__/__TOTAL_TRACES__ (__EXECUTABLE_PCT__%)</div>
+  </div>
+  <div class="kpi">
+    <div class="label">业务口径结果正确 (EX)</div>
+    <div class="value">__RESULT_CORRECT_COUNT__/__TOTAL_TRACES__ (__RESULT_CORRECT_PCT__%)</div>
+  </div>
+  <div class="kpi trap">
+    <div class="label">静默口径陷阱 (Exec=PASS, EX=FAIL)</div>
+    <div class="value">__SILENT_TRAP_COUNT__ (__SILENT_TRAP_PCT__%)</div>
+  </div>
+  <div class="kpi">
+    <div class="label">网关/语法拦截 (Exec=FAIL)</div>
+    <div class="value">__GATEWAY_BLOCK_COUNT__</div>
+  </div>
+</section>
+
+<section class="controls">
+  <select id="verdictFilter">
+    <option value="all">All Dual-Verdict Categories</option>
+    <option value="silent_caliber_trap">Silent Caliber Traps (Executable=PASS &amp; EX=FAIL)</option>
+    <option value="gateway_or_syntax_block">Gateway / Syntax Blocks (Executable=FAIL)</option>
+    <option value="self_repaired_pass">Self-Repaired Correct</option>
+    <option value="first_pass_pass">First-Pass Correct</option>
+  </select>
+  <select id="suiteFilter">
+    <option value="all">All Suites (v1 / hard_v2 / external_bird_mini)</option>
+    <option value="v1">v1</option>
+    <option value="hard_v2">hard_v2</option>
+    <option value="external_bird_mini">external_bird_mini</option>
+  </select>
+  <input id="searchBox" type="search" placeholder="Filter by task_id, table name, ODPS error code, SQL keyword...">
+</section>
+
+<main id="traceContainer" class="trace-list"></main>
+
+<script type="application/json" id="trace-payload">__SAFE_JSON_PAYLOAD__</script>
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('trace-payload').textContent);
+  const container = document.getElementById('traceContainer');
+  const verdictSel = document.getElementById('verdictFilter');
+  const suiteSel = document.getElementById('suiteFilter');
+  const searchBox = document.getElementById('searchBox');
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function render() {
+    const vFilter = verdictSel.value;
+    const sFilter = suiteSel.value;
+    const q = searchBox.value.trim().toLowerCase();
+    const filtered = data.traces.filter(t => {
+      if (vFilter !== 'all' && t.dual_verdict.verdict_code !== vFilter) return false;
+      if (sFilter !== 'all' && t.suite !== sFilter) return false;
+      if (q && !JSON.stringify(t).toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    container.innerHTML = filtered.map(t => {
+      const dv = t.dual_verdict;
+      const gw = t.generator_and_gateway;
+      const lk = t.linker;
+      const execCls = dv.executable ? 'pass' : 'fail';
+      const exCls = dv.result_correct ? 'pass' : 'fail';
+      const catCls = dv.is_silent_caliber_trap ? 'trap' : (dv.result_correct ? 'pass' : 'fail');
+      const factsHtml = (lk.discovered_facts && lk.discovered_facts.length)
+        ? '<ul class="facts">' + lk.discovered_facts.map(f => '<li>' + esc(f) + '</li>').join('') + '</ul>'
+        : '<div style="color:#94a3b8">No inspect_table_sample probe issued.</div>';
+      const roundsHtml = (t.refinement.rounds && t.refinement.rounds.length)
+        ? t.refinement.rounds.map(r => (
+            '<div style="margin-top:8px"><strong>Turn ' + r.turn + ' [' + esc(r.trigger_type) + ']:</strong> '
+            + esc(r.diagnosis) + '<pre>' + esc(r.unified_diff) + '</pre></div>'
+          )).join('')
+        : '<div style="color:#94a3b8">0 refinement rounds executed.</div>';
+
+      return '<article class="card ' + esc(dv.verdict_code) + '">'
+        + '<div class="card-header">'
+        +   '<div class="badges">'
+        +     '<span class="badge meta">' + esc(t.suite) + ' · ' + esc(t.task_id) + ' · policy=' + esc(t.policy_id) + ' · ' + esc(t.dialect.toUpperCase()) + '</span>'
+        +     '<span class="badge ' + catCls + '">' + esc(dv.verdict_title) + '</span>'
+        +   '</div>'
+        +   '<div class="badges">'
+        +     '<span class="badge ' + execCls + '">' + esc(dv.executable_badge) + '</span>'
+        +     '<span class="badge ' + exCls + '">' + esc(dv.result_correct_badge) + '</span>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="question"><strong>Question:</strong> ' + esc(t.question) + (t.hint ? '<br><span style="color:#94a3b8">Hint: ' + esc(t.hint) + '</span>' : '') + '</div>'
+        + '<div class="stage-grid">'
+        +   '<div class="box"><h4>1. Schema Linking &amp; Sample Probing (WarehouseLinker)</h4>'
+        +     '<div>Catalog (' + lk.candidate_table_count + ' tables) &rarr; Selected: <code>' + esc((lk.selected_tables || []).join(', ')) + '</code></div>'
+        +     '<div style="margin-top:6px"><strong>Probed Facts:</strong>' + factsHtml + '</div>'
+        +     (lk.schema_notes ? '<div style="margin-top:6px;color:#cbd5e1"><strong>Notes:</strong> ' + esc(lk.schema_notes) + '</div>' : '')
+        +   '</div>'
+        +   '<div class="box"><h4>2. Dialect SQL &amp; AST Gateway Check (Generator + GatewayLinter)</h4>'
+        +     '<div>1st-Pass Gateway: <strong>' + (gw.first_pass_gateway_passed ? 'PASS' : 'BLOCKED (' + esc(gw.first_pass_error_code || gw.first_pass_error_stage) + ')') + '</strong></div>'
+        +     (gw.first_pass_error_msg ? '<div style="color:#fca5a5;margin-top:4px">' + esc(gw.first_pass_error_msg) + '</div>' : '')
+        +     '<pre>' + esc(gw.final_sql) + '</pre>'
+        +   '</div>'
+        +   '<div class="box"><h4>3. Refinement &amp; Post-Execution Sanity Audit (GatewayRefiner)</h4>' + roundsHtml + '</div>'
+        +   '<div class="box"><h4>4. Dual-Verdict Result Comparison vs Gold</h4>'
+        +     '<div><strong>Diff Verdict:</strong> ' + esc(dv.diff_reason) + '</div>'
+        +     '<div style="margin-top:4px">Pred (' + dv.final_row_count + ' rows): <code>' + esc((dv.pred_sample_rows || []).slice(0, 3).join(' | ')) + '</code></div>'
+        +     '<div style="margin-top:4px">Gold (' + dv.gold_row_count + ' rows): <code>' + esc((dv.gold_sample_rows || []).slice(0, 3).join(' | ')) + '</code></div>'
+        +     '<pre>' + esc(dv.gold_sql) + '</pre>'
+        +   '</div>'
+        + '</div>'
+        + '</article>';
+    }).join('');
+  }
+
+  verdictSel.addEventListener('change', render);
+  suiteSel.addEventListener('change', render);
+  searchBox.addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>

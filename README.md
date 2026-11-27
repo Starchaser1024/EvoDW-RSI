@@ -95,10 +95,10 @@ EvoDW-RSI/
 │   ├── llm/                        # client.py (DualRoleLLMClient), mock_client.py
 │   ├── env/                        # schema.py, gateway_linter.py, partition_pruning.py, local_executor.py, sandbox.py
 │   ├── agent/                      # policy.py, trajectory.py, linker.py, generator.py, refiner.py, pipeline.py
-│   ├── benchmarks/                 # catalog_builder.py, dw_generator.py, hard_v2_populator.py, v1/*, hard_v2_tasks.py, external_cross_schema.py
+│   ├── benchmarks/                 # catalog_builder.py, dw_generator.py, hard_v2_populator.py, v1/*, hard_v2_tasks.py, external/*
 │   ├── rsi/                        # attribution.py, dialect_guards.py, pareto.py, merger.py, scheduling.py, eval_cache.py, engine.py
 │   ├── eval/                       # comparator.py, metrics.py, reporter.py, manifest_audit.py, fixed_budget.py
-│   ├── inspector/                  # trace_inspector.py (双维判定 SQL 轨迹透视工作台：网关可执行 vs 业务口径正确)
+│   ├── inspector/                  # trace_inspector.py, server_cli.py, template.html (双维判定 SQL 轨迹透视工作台)
 │   ├── export/                     # rl_bridge.py (SFT/GRPO 数据集导出与独立 reward_fn)
 │   └── rl/                         # config.py, model_utils.py, sft_dataset.py, sft_trainer.py, multiturn_rollout.py,
 │                                   # rewards.py, grpo_data.py, grpo_engine.py, grpo_trainer.py, hf_client.py, inference.py, eval_report.py
